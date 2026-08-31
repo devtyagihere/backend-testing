@@ -1,0 +1,69 @@
+﻿{
+  "routes": [
+    {
+      "origin_id": "AUHPT",
+      "origin_name": "Hay Point / Gladstone (Australia)",
+      "destinations": {
+        "INPRT": { "dest_name": "Paradip Port", "distance_nm": 4650, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INVTZ": { "dest_name": "Visakhapatnam (Vizag)", "distance_nm": 4550, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INGNR": { "dest_name": "Gangavaram Port", "distance_nm": 4540, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INDHR": { "dest_name": "Dhamra Port", "distance_nm": 4680, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INGPL": { "dest_name": "Gopalpur Port", "distance_nm": 4580, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INHLD": { "dest_name": "Haldia Dock Complex", "distance_nm": 4720, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INSND": { "dest_name": "Sagar / Sandheads Anchorage", "distance_nm": 4700, "canal_transit": "None", "canal_dues_usd": 0 }
+      }
+    },
+    {
+      "origin_id": "IDTBO",
+      "origin_name": "Taboneo / Samarinda (Indonesia)",
+      "destinations": {
+        "INPRT": { "dest_name": "Paradip Port", "distance_nm": 2300, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INVTZ": { "dest_name": "Visakhapatnam (Vizag)", "distance_nm": 2200, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INGNR": { "dest_name": "Gangavaram Port", "distance_nm": 2190, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INDHR": { "dest_name": "Dhamra Port", "distance_nm": 2330, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INGPL": { "dest_name": "Gopalpur Port", "distance_nm": 2230, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INHLD": { "dest_name": "Haldia Dock Complex", "distance_nm": 2370, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INSND": { "dest_name": "Sagar / Sandheads Anchorage", "distance_nm": 2350, "canal_transit": "None", "canal_dues_usd": 0 }
+      }
+    },
+    {
+      "origin_id": "MZMPM",
+      "origin_name": "Maputo / Matola (Mozambique)",
+      "destinations": {
+        "INPRT": { "dest_name": "Paradip Port", "distance_nm": 4400, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INVTZ": { "dest_name": "Visakhapatnam (Vizag)", "distance_nm": 4280, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INGNR": { "dest_name": "Gangavaram Port", "distance_nm": 4270, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INDHR": { "dest_name": "Dhamra Port", "distance_nm": 4430, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INGPL": { "dest_name": "Gopalpur Port", "distance_nm": 4320, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INHLD": { "dest_name": "Haldia Dock Complex", "distance_nm": 4470, "canal_transit": "None", "canal_dues_usd": 0 },
+        "INSND": { "dest_name": "Sagar / Sandheads Anchorage", "distance_nm": 4450, "canal_transit": "None", "canal_dues_usd": 0 }
+      }
+    },
+    {
+      "origin_id": "RUUST",
+      "origin_name": "Ust-Luga / Taman (Russia)",
+      "destinations": {
+        "INPRT": { "dest_name": "Paradip Port", "distance_nm": 8600, "canal_transit": "Suez Canal", "canal_dues_usd": 240000 },
+        "INVTZ": { "dest_name": "Visakhapatnam (Vizag)", "distance_nm": 8500, "canal_transit": "Suez Canal", "canal_dues_usd": 240000 },
+        "INGNR": { "dest_name": "Gangavaram Port", "distance_nm": 8490, "canal_transit": "Suez Canal", "canal_dues_usd": 240000 },
+        "INDHR": { "dest_name": "Dhamra Port", "distance_nm": 8630, "canal_transit": "Suez Canal", "canal_dues_usd": 240000 },
+        "INGPL": { "dest_name": "Gopalpur Port", "distance_nm": 8530, "canal_transit": "Suez Canal", "canal_dues_usd": 240000 },
+        "INHLD": { "dest_name": "Haldia Dock Complex", "distance_nm": 8670, "canal_transit": "Suez Canal", "canal_dues_usd": 240000 },
+        "INSND": { "dest_name": "Sagar / Sandheads Anchorage", "distance_nm": 8650, "canal_transit": "Suez Canal", "canal_dues_usd": 240000 }
+      }
+    },
+    {
+      "origin_id": "USHRD",
+      "origin_name": "Hampton Roads (USA)",
+      "destinations": {
+        "INPRT": { "dest_name": "Paradip Port", "distance_nm": 9200, "canal_transit": "Cape of Good Hope", "canal_dues_usd": 0 },
+        "INVTZ": { "dest_name": "Visakhapatnam (Vizag)", "distance_nm": 9080, "canal_transit": "Cape of Good Hope", "canal_dues_usd": 0 },
+        "INGNR": { "dest_name": "Gangavaram Port", "distance_nm": 9070, "canal_transit": "Cape of Good Hope", "canal_dues_usd": 0 },
+        "INDHR": { "dest_name": "Dhamra Port", "distance_nm": 9230, "canal_transit": "Cape of Good Hope", "canal_dues_usd": 0 },
+        "INGPL": { "dest_name": "Gopalpur Port", "distance_nm": 9120, "canal_transit": "Cape of Good Hope", "canal_dues_usd": 0 },
+        "INHLD": { "dest_name": "Haldia Dock Complex", "distance_nm": 9270, "canal_transit": "Cape of Good Hope", "canal_dues_usd": 0 },
+        "INSND": { "dest_name": "Sagar / Sandheads Anchorage", "distance_nm": 9250, "canal_transit": "Cape of Good Hope", "canal_dues_usd": 0 }
+      }
+    }
+  ]
+}

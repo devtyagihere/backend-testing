@@ -1,18 +1,20 @@
-﻿# Dockerfile skeleton for Backend Application
-# ----------------------------------------------------
-# Multi-stage build setup for production deployments
+﻿# Multi-stage Dockerfile for SAIL Freight Forecasting & Chartering System
+FROM python:3.13-slim AS builder
 
-# Stage 1: Build & Dependencies
-# FROM node:20-alpine AS builder
-# WORKDIR /app
-# COPY package*.json ./
-# RUN npm ci
-# COPY . .
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
 
-# Stage 2: Production Runtime
-# FROM node:20-alpine AS runner
-# WORKDIR /app
-# ENV NODE_ENV=production
-# COPY --from=builder /app ./
-# EXPOSE 5000
-# CMD ["node", "src/server.js"]
+FROM python:3.13-slim AS runner
+
+WORKDIR /app
+COPY --from=builder /root/.local /root/.local
+COPY . .
+
+ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONUNBUFFERED=1
+ENV PORT=8000
+
+EXPOSE 8000
+
+CMD ["python", "run.py"]
