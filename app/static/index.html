@@ -3,16 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SAIL Intelligent Freight Forecasting | SIH26006</title>
+  <title>FreightIQ — Bulk Charter Intelligence Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
           colors: {
-            brand: { 50: '#f0f9ff', 100: '#e0f2fe', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e', 950: '#041d2d' },
-            steel: { 700: '#334155', 800: '#1e293b', 850: '#172033', 900: '#0f172a', 950: '#080d1a' }
+            surface: { 0: '#020508', 1: '#06090f', 2: '#0c1117', 3: '#111720', 4: '#171f2a' },
+            edge: { DEFAULT: '#1a2332', soft: '#222d3d', hover: '#2a3649' },
+            ink: { 0: '#f1f5f9', 1: '#94a3b8', 2: '#64748b', 3: '#3a4a5e' },
+            brand: { DEFAULT: '#2563eb', dim: '#1d4ed8', muted: 'rgba(37,99,235,0.12)', border: 'rgba(37,99,235,0.25)' },
+            teal: { DEFAULT: '#0d9488', muted: 'rgba(13,148,136,0.12)', border: 'rgba(13,148,136,0.25)' },
+            amber: { DEFAULT: '#d97706', muted: 'rgba(217,119,6,0.12)', border: 'rgba(217,119,6,0.25)' },
+            crimson: { DEFAULT: '#dc2626', muted: 'rgba(220,38,38,0.10)', border: 'rgba(220,38,38,0.25)' }
           }
         }
       }
@@ -21,104 +29,137 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body { background-color: #020508; font-family: 'Inter', system-ui, sans-serif; }
+    .nav-link.active { background: rgba(37,99,235,0.10); color: #93c5fd; border-color: rgba(37,99,235,0.2); }
+    .stat-card { background: #0c1117; border: 1px solid #1a2332; border-radius: 8px; padding: 20px 24px; }
+    .panel { background: #0c1117; border: 1px solid #1a2332; border-radius: 10px; }
+    .input-field { background: #06090f; border: 1px solid #1a2332; border-radius: 6px; color: #f1f5f9; font-size: 0.8125rem; padding: 8px 12px; width: 100%; outline: none; transition: border-color 0.15s; }
+    .input-field:focus { border-color: rgba(37,99,235,0.6); }
+    .btn-primary { background: #2563eb; color: #fff; border: none; border-radius: 6px; font-size: 0.8125rem; font-weight: 600; padding: 9px 20px; cursor: pointer; transition: background 0.15s; display: flex; align-items: center; gap: 6px; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-ghost { background: transparent; color: #94a3b8; border: 1px solid #1a2332; border-radius: 6px; font-size: 0.8125rem; font-weight: 500; padding: 7px 14px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+    .btn-ghost:hover { background: #111720; color: #f1f5f9; border-color: #222d3d; }
+    .badge { font-size: 10px; font-weight: 600; letter-spacing: 0.05em; padding: 2px 8px; border-radius: 4px; }
+    .badge-blue { background: rgba(37,99,235,0.12); color: #93c5fd; border: 1px solid rgba(37,99,235,0.2); }
+    .badge-teal { background: rgba(13,148,136,0.12); color: #5eead4; border: 1px solid rgba(13,148,136,0.2); }
+    .badge-amber { background: rgba(217,119,6,0.12); color: #fbbf24; border: 1px solid rgba(217,119,6,0.2); }
+    .badge-red { background: rgba(220,38,38,0.10); color: #fca5a5; border: 1px solid rgba(220,38,38,0.2); }
+    .badge-slate { background: rgba(100,116,139,0.12); color: #94a3b8; border: 1px solid rgba(100,116,139,0.2); }
+    .divider { border-top: 1px solid #1a2332; }
+    .data-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #111720; }
+    .data-row:last-child { border-bottom: none; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #06090f; }
+    ::-webkit-scrollbar-thumb { background: #1a2332; border-radius: 2px; }
+    .slide-in { animation: slideIn 0.2s ease forwards; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    @media print {
+      body * { visibility: hidden !important; }
+      #modal-memo, #modal-memo * { visibility: visible !important; }
+      #modal-memo { position: fixed; inset: 0; z-index: 9999; background: white; padding: 40px; border-radius: 0; }
+    }
+  </style>
 </head>
-<body class="bg-steel-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased">
-  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+<body class="text-ink-0 min-h-screen flex flex-col">
+  <div id="toast-container" class="fixed bottom-4 right-4 z-[200] flex flex-col gap-2 pointer-events-none"></div>
 
-  <header class="border-b border-slate-800/80 bg-steel-900/90 backdrop-blur-md sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3 cursor-pointer" onclick="navigateToTab('landing')">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-brand-500 to-amber-500 flex items-center justify-center font-black text-white shadow-lg shadow-brand-500/20">
-          <i data-lucide="anchor" class="w-5 h-5"></i>
+  <!-- NAVBAR -->
+  <header style="background:#06090f;border-bottom:1px solid #1a2332;position:sticky;top:0;z-index:100;">
+    <div style="max-width:1280px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+
+      <!-- Brand -->
+      <div style="display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="navigateToTab('landing')">
+        <div style="width:30px;height:30px;background:#2563eb;border-radius:6px;display:flex;align-items:center;justify-content:center;">
+          <i data-lucide="anchor" style="width:15px;height:15px;color:white;"></i>
         </div>
         <div>
-          <div class="flex items-center space-x-2">
-            <span class="font-extrabold text-base tracking-tight text-white">SAIL FREIGHT INTELLIGENCE</span>
-            <span class="px-2 py-0.5 text-[10px] font-black rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">SIH26006</span>
-          </div>
-          <p class="text-[11px] text-slate-400 font-medium">Ministry of Steel · Dry Bulk Charter Decision Engine</p>
+          <div style="font-size:0.875rem;font-weight:700;color:#f1f5f9;letter-spacing:-0.01em;line-height:1.1;">FreightIQ</div>
+          <div style="font-size:0.6875rem;color:#64748b;font-weight:400;line-height:1.1;">Charter Intelligence — Ministry of Steel</div>
         </div>
       </div>
 
-      <nav class="hidden md:flex items-center space-x-1 bg-steel-950/60 p-1 rounded-xl border border-slate-800/60 text-xs">
-        <button id="nav-landing" onclick="navigateToTab('landing')" class="nav-link active px-3.5 py-1.5 rounded-lg font-semibold text-slate-300 hover:text-white transition-all flex items-center space-x-1.5 cursor-pointer">
-          <i data-lucide="home" class="w-3.5 h-3.5"></i><span>Overview</span>
+      <!-- Nav Tabs -->
+      <nav style="display:flex;align-items:center;gap:2px;">
+        <button id="nav-landing" onclick="navigateToTab('landing')" class="nav-link active" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid transparent;font-size:0.8125rem;font-weight:500;color:#94a3b8;background:transparent;cursor:pointer;transition:all 0.15s;">
+          <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i><span>Overview</span>
         </button>
-        <button id="nav-optimizer" onclick="navigateToTab('optimizer')" class="nav-link px-3.5 py-1.5 rounded-lg font-semibold text-slate-300 hover:text-white transition-all flex items-center space-x-1.5 cursor-pointer">
-          <i data-lucide="compass" class="w-3.5 h-3.5"></i><span>Decision Optimizer</span>
+        <button id="nav-optimizer" onclick="navigateToTab('optimizer')" class="nav-link" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid transparent;font-size:0.8125rem;font-weight:500;color:#94a3b8;background:transparent;cursor:pointer;transition:all 0.15s;">
+          <i data-lucide="sliders-horizontal" style="width:13px;height:13px;"></i><span>Optimizer</span>
         </button>
-        <button id="nav-market" onclick="navigateToTab('market')" class="nav-link px-3.5 py-1.5 rounded-lg font-semibold text-slate-300 hover:text-white transition-all flex items-center space-x-1.5 cursor-pointer">
-          <i data-lucide="activity" class="w-3.5 h-3.5"></i><span>Market Intelligence</span>
+        <button id="nav-market" onclick="navigateToTab('market')" class="nav-link" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid transparent;font-size:0.8125rem;font-weight:500;color:#94a3b8;background:transparent;cursor:pointer;transition:all 0.15s;">
+          <i data-lucide="bar-chart-3" style="width:13px;height:13px;"></i><span>Market</span>
         </button>
-        <button id="nav-backtest" onclick="navigateToTab('backtest')" class="nav-link px-3.5 py-1.5 rounded-lg font-semibold text-slate-300 hover:text-white transition-all flex items-center space-x-1.5 cursor-pointer">
-          <i data-lucide="history" class="w-3.5 h-3.5"></i><span>Backtest Studio</span>
+        <button id="nav-backtest" onclick="navigateToTab('backtest')" class="nav-link" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid transparent;font-size:0.8125rem;font-weight:500;color:#94a3b8;background:transparent;cursor:pointer;transition:all 0.15s;">
+          <i data-lucide="history" style="width:13px;height:13px;"></i><span>Backtest</span>
         </button>
-        <button id="nav-ports" onclick="navigateToTab('ports')" class="nav-link px-3.5 py-1.5 rounded-lg font-semibold text-slate-300 hover:text-white transition-all flex items-center space-x-1.5 cursor-pointer">
-          <i data-lucide="database" class="w-3.5 h-3.5"></i><span>Ports Registry</span>
+        <button id="nav-ports" onclick="navigateToTab('ports')" class="nav-link" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid transparent;font-size:0.8125rem;font-weight:500;color:#94a3b8;background:transparent;cursor:pointer;transition:all 0.15s;">
+          <i data-lucide="map-pin" style="width:13px;height:13px;"></i><span>Ports</span>
         </button>
       </nav>
 
-      <div class="flex items-center space-x-3">
-        <div class="relative">
-          <button id="btn-scenarios-dropdown" onclick="toggleDropdown('scenarios-menu')" class="flex items-center space-x-2 px-3 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 transition-all cursor-pointer">
-            <i data-lucide="play-circle" class="w-3.5 h-3.5"></i><span>Demo Scenarios</span><i data-lucide="chevron-down" class="w-3 h-3"></i>
+      <!-- Right Controls -->
+      <div style="display:flex;align-items:center;gap:8px;">
+
+        <!-- Scenarios -->
+        <div style="position:relative;">
+          <button onclick="toggleDropdown('scenarios-menu')" style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:6px;color:#93c5fd;font-size:0.8125rem;font-weight:500;cursor:pointer;">
+            <i data-lucide="play" style="width:12px;height:12px;"></i><span>Scenarios</span><i data-lucide="chevron-down" style="width:11px;height:11px;opacity:0.6;"></i>
           </button>
-          <div id="scenarios-menu" class="hidden absolute right-0 mt-2 w-80 bg-steel-900 border border-slate-700 rounded-xl shadow-2xl z-50 p-2 space-y-1.5 backdrop-blur-lg">
-            <div class="px-2 py-1 border-b border-slate-800 text-[10px] uppercase font-bold text-slate-400">Hackathon Scenarios</div>
-            <div id="scenarios-list" class="space-y-1"></div>
+          <div id="scenarios-menu" class="slide-in" style="display:none;position:absolute;right:0;top:calc(100% + 6px);width:300px;background:#0c1117;border:1px solid #1a2332;border-radius:8px;padding:6px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+            <div style="padding:6px 8px 8px;font-size:10px;font-weight:600;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid #111720;margin-bottom:4px;">Operational Scenarios</div>
+            <div id="scenarios-list"></div>
           </div>
         </div>
 
-        <div class="relative">
-          <button id="btn-notifications" onclick="toggleDropdown('notifications-panel')" class="w-9 h-9 rounded-lg bg-steel-850 hover:bg-steel-800 border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition-colors relative cursor-pointer">
-            <i data-lucide="bell" class="w-4 h-4"></i>
-            <span id="notif-badge" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white font-bold text-[9px] flex items-center justify-center">2</span>
+        <!-- Notifications -->
+        <div style="position:relative;">
+          <button onclick="toggleDropdown('notifications-panel')" style="position:relative;width:34px;height:34px;background:#06090f;border:1px solid #1a2332;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#94a3b8;">
+            <i data-lucide="bell" style="width:15px;height:15px;"></i>
+            <span id="notif-badge" style="position:absolute;top:-3px;right:-3px;width:16px;height:16px;background:#2563eb;color:white;font-size:9px;font-weight:700;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;">2</span>
           </button>
-          <div id="notifications-panel" class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-steel-900 border border-slate-700 rounded-xl shadow-2xl z-50 p-3 backdrop-blur-lg">
-            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-              <span class="font-bold text-xs text-white flex items-center space-x-1.5"><i data-lucide="radio" class="w-3.5 h-3.5 text-brand-400"></i><span>Live Signals</span></span>
-              <button onclick="markAllNotificationsRead()" class="text-[10px] text-brand-400 hover:underline cursor-pointer">Mark all read</button>
+          <div id="notifications-panel" class="slide-in" style="display:none;position:absolute;right:0;top:calc(100% + 6px);width:340px;background:#0c1117;border:1px solid #1a2332;border-radius:8px;padding:12px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #111720;">
+              <span style="font-size:0.8125rem;font-weight:600;color:#f1f5f9;display:flex;align-items:center;gap:6px;"><i data-lucide="radio" style="width:13px;height:13px;color:#2563eb;"></i>Live Signals</span>
+              <button onclick="markAllNotificationsRead()" style="font-size:11px;color:#2563eb;background:none;border:none;cursor:pointer;font-weight:500;">Clear all</button>
             </div>
-            <div id="notifications-list" class="divide-y divide-slate-800/80 max-h-64 overflow-y-auto my-2 pr-1 space-y-1"></div>
+            <div id="notifications-list" style="display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;"></div>
           </div>
         </div>
 
-        <div class="relative">
-          <button id="btn-user-profile" onclick="toggleDropdown('user-menu')" class="flex items-center space-x-2 pl-2 pr-3 py-1 bg-steel-850 hover:bg-steel-800 border border-slate-700 rounded-lg text-xs transition-colors cursor-pointer">
-            <div id="user-avatar" class="w-6 h-6 rounded-md bg-brand-600 text-white font-bold text-[10px] flex items-center justify-center shadow">DT</div>
-            <div class="text-left hidden lg:block">
-              <span id="user-display-name" class="font-bold text-slate-200 block text-[11px] leading-tight">Devendra Tyagi</span>
-              <span id="user-role-name" class="text-[9px] text-brand-400 block leading-tight">CPO, SAIL</span>
+        <!-- Profile -->
+        <div style="position:relative;">
+          <button onclick="toggleDropdown('user-menu')" style="display:flex;align-items:center;gap:8px;padding:5px 10px 5px 5px;background:#06090f;border:1px solid #1a2332;border-radius:6px;cursor:pointer;">
+            <div id="user-avatar" style="width:24px;height:24px;background:#2563eb;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;font-family:'JetBrains Mono',monospace;">DT</div>
+            <div style="text-align:left;">
+              <div id="user-display-name" style="font-size:0.75rem;font-weight:600;color:#f1f5f9;line-height:1.1;">Devendra Tyagi</div>
+              <div id="user-role-name" style="font-size:0.625rem;color:#64748b;line-height:1.2;">CPO, SAIL</div>
             </div>
-            <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+            <i data-lucide="chevron-down" style="width:11px;height:11px;color:#64748b;"></i>
           </button>
-          <div id="user-menu" class="hidden absolute right-0 mt-2 w-72 bg-steel-900 border border-slate-700 rounded-xl shadow-2xl z-50 p-3 backdrop-blur-lg space-y-3">
-            <div class="border-b border-slate-800 pb-2">
-              <span class="text-xs font-bold text-white block" id="menu-user-name">Devendra Tyagi</span>
-              <span class="text-[10px] text-slate-400 block" id="menu-user-title">Chief Procurement & Shipping Officer</span>
-              <span class="text-[10px] text-brand-400 block font-semibold mt-0.5">Steel Authority of India Limited</span>
+          <div id="user-menu" class="slide-in" style="display:none;position:absolute;right:0;top:calc(100% + 6px);width:260px;background:#0c1117;border:1px solid #1a2332;border-radius:8px;padding:12px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+            <div style="padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid #111720;">
+              <div id="menu-user-name" style="font-size:0.875rem;font-weight:600;color:#f1f5f9;">Devendra Tyagi</div>
+              <div id="menu-user-title" style="font-size:0.75rem;color:#64748b;margin-top:2px;">Chief Procurement Officer</div>
+              <div style="font-size:0.6875rem;color:#2563eb;margin-top:2px;font-weight:500;">Steel Authority of India Limited</div>
             </div>
-            <div>
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Switch Role View</span>
-              <div class="space-y-1">
-                <button onclick="switchUserRole('cpo')" class="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-steel-800 flex items-center justify-between text-slate-200 cursor-pointer">
-                  <span>🏛️ SAIL Procurement Chief</span><span class="text-[10px] text-brand-400 font-bold">$50M DOA</span>
-                </button>
-                <button onclick="switchUserRole('chartering_lead')" class="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-steel-800 flex items-center justify-between text-slate-200 cursor-pointer">
-                  <span>⚓ Shipping Operations Lead</span><span class="text-[10px] text-emerald-400 font-bold">Kolkata Cell</span>
-                </button>
-                <button onclick="switchUserRole('auditor')" class="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-steel-800 flex items-center justify-between text-slate-200 cursor-pointer">
-                  <span>⚖️ Ministry Auditor</span><span class="text-[10px] text-amber-400 font-bold">Udyog Bhawan</span>
-                </button>
-              </div>
-            </div>
-            <div class="border-t border-slate-800 pt-2 flex items-center justify-between">
-              <a href="/docs" target="_blank" class="text-[11px] text-slate-400 hover:text-white flex items-center space-x-1">
-                <i data-lucide="file-text" class="w-3 h-3"></i><span>API Docs</span>
-              </a>
-              <button onclick="showToast('Signed out successfully (Demo Mode)', 'info')" class="text-[11px] text-rose-400 hover:underline flex items-center space-x-1 cursor-pointer">
-                <i data-lucide="log-out" class="w-3 h-3"></i><span>Sign Out</span>
+            <div style="font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;">Switch View</div>
+            <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:10px;">
+              <button onclick="switchUserRole('cpo')" style="width:100%;text-align:left;padding:7px 8px;border-radius:5px;background:none;border:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:0.8125rem;color:#94a3b8;" onmouseover="this.style.background='#111720'" onmouseout="this.style.background='none'">
+                <span>SAIL Procurement Chief</span><span style="font-size:10px;color:#2563eb;font-weight:600;font-family:'JetBrains Mono',monospace;">USD 50M DOA</span>
               </button>
+              <button onclick="switchUserRole('chartering_lead')" style="width:100%;text-align:left;padding:7px 8px;border-radius:5px;background:none;border:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:0.8125rem;color:#94a3b8;" onmouseover="this.style.background='#111720'" onmouseout="this.style.background='none'">
+                <span>Shipping Operations Lead</span><span style="font-size:10px;color:#0d9488;font-weight:600;">Kolkata Cell</span>
+              </button>
+              <button onclick="switchUserRole('auditor')" style="width:100%;text-align:left;padding:7px 8px;border-radius:5px;background:none;border:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:0.8125rem;color:#94a3b8;" onmouseover="this.style.background='#111720'" onmouseout="this.style.background='none'">
+                <span>Ministry Auditor</span><span style="font-size:10px;color:#d97706;font-weight:600;">MoS, New Delhi</span>
+              </button>
+            </div>
+            <div style="padding-top:8px;border-top:1px solid #111720;display:flex;justify-content:space-between;align-items:center;">
+              <a href="/docs" target="_blank" style="font-size:0.75rem;color:#64748b;text-decoration:none;display:flex;align-items:center;gap:4px;"><i data-lucide="file-code" style="width:12px;height:12px;"></i>API Reference</a>
+              <button onclick="showToast('Session ended — Demo Mode active', 'info')" style="font-size:0.75rem;color:#64748b;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;"><i data-lucide="log-out" style="width:12px;height:12px;"></i>Sign out</button>
             </div>
           </div>
         </div>
@@ -126,152 +167,208 @@
       </div>
     </div>
   </header>
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-    <!-- VIEW 1: LANDING & SYSTEM HERO PAGE -->
-    <section id="view-landing" class="space-y-12 block">
-      <div class="relative rounded-3xl overflow-hidden border border-slate-800 bg-gradient-to-b from-steel-900 via-steel-950 to-steel-950 p-8 sm:p-12 text-center space-y-6 shadow-2xl">
-        <div class="flex flex-wrap items-center justify-center gap-2">
-          <span class="px-3 py-1 rounded-full text-xs font-bold bg-brand-500/20 text-brand-300 border border-brand-500/30 flex items-center space-x-1.5">
-            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-brand-400"></i><span>Ministry of Steel · SAIL Decision Support</span>
-          </span>
-          <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">SIH26006 Problem Statement</span>
+  <main style="flex:1;max-width:1280px;width:100%;margin:0 auto;padding:24px;">
+
+    <!-- VIEW: LANDING -->
+    <section id="view-landing" style="display:block;">
+
+      <!-- Header Row -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:32px;gap:24px;flex-wrap:wrap;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <span class="badge badge-blue">SIH26006</span>
+            <span class="badge badge-slate">Ministry of Steel</span>
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;background:#0d9488;border-radius:50%;display:inline-block;"></span><span style="font-size:10px;color:#0d9488;font-weight:600;">SYSTEM OPERATIONAL</span></span>
+          </div>
+          <h1 style="font-size:1.75rem;font-weight:700;color:#f1f5f9;letter-spacing:-0.02em;line-height:1.2;margin-bottom:8px;">Bulk Freight Charter<br>Intelligence Platform</h1>
+          <p style="font-size:0.875rem;color:#64748b;max-width:520px;line-height:1.6;">AI-driven vessel chartering and freight rate forecasting for SAIL dry bulk procurement — East Coast of India.</p>
         </div>
-        <h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight max-w-4xl mx-auto leading-tight">
-          Intelligent Freight Forecasting & <span class="bg-gradient-to-r from-brand-400 via-amber-300 to-amber-500 bg-clip-text text-transparent">Optimized Vessel Chartering</span> for Indian Steel
-        </h1>
-        <p class="text-slate-300 text-sm sm:text-base max-w-3xl mx-auto leading-relaxed">
-          Transitioning SAIL bulk procurement from reactive daily spot booking to <b class="text-white">anticipatory multi-horizon AI chartering</b>. Deterministic port draft gatekeeping, Baltic sub-indices economic modeling, and "Wait vs. Book" timing optimization.
-        </p>
-        <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
-          <button onclick="navigateToTab('optimizer'); runOptimization();" class="px-6 py-3.5 rounded-xl font-black text-sm bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-400 hover:to-brand-500 text-white shadow-xl shadow-brand-500/25 flex items-center space-x-2 transition-all cursor-pointer">
-            <i data-lucide="compass" class="w-4 h-4"></i><span>Launch Charter Optimizer</span>
-          </button>
-          <button onclick="loadScenario('scenario-1')" class="px-6 py-3.5 rounded-xl font-bold text-sm bg-steel-850 hover:bg-steel-800 text-amber-300 border border-amber-500/40 shadow-lg flex items-center space-x-2 transition-all cursor-pointer">
-            <i data-lucide="play-circle" class="w-4 h-4 text-amber-400"></i><span>Run 75k MT Aus &rarr; Paradip Demo</span>
-          </button>
-        </div>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-slate-800/80 max-w-4xl mx-auto">
-          <div class="p-3 bg-steel-900/80 rounded-xl border border-slate-800"><span class="text-2xl sm:text-3xl font-black text-emerald-400">$2.065 M</span><span class="text-[11px] text-slate-400 block font-semibold uppercase mt-0.5">12-Mo Backtest Savings</span></div>
-          <div class="p-3 bg-steel-900/80 rounded-xl border border-slate-800"><span class="text-2xl sm:text-3xl font-black text-amber-400">83.3%</span><span class="text-[11px] text-slate-400 block font-semibold uppercase mt-0.5">Decision Win Rate</span></div>
-          <div class="p-3 bg-steel-900/80 rounded-xl border border-slate-800"><span class="text-2xl sm:text-3xl font-black text-brand-400">7 Ports</span><span class="text-[11px] text-slate-400 block font-semibold uppercase mt-0.5">East Coast Gatekeeper</span></div>
-          <div class="p-3 bg-steel-900/80 rounded-xl border border-slate-800"><span class="text-2xl sm:text-3xl font-black text-purple-400">45 Days</span><span class="text-[11px] text-slate-400 block font-semibold uppercase mt-0.5">Forward AI Horizon</span></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <button onclick="navigateToTab('optimizer'); runOptimization();" class="btn-primary"><i data-lucide="sliders-horizontal" style="width:14px;height:14px;"></i>Open Optimizer</button>
+          <button onclick="loadScenario('scenario-1')" class="btn-ghost"><i data-lucide="play" style="width:14px;height:14px;"></i>Run Demo</button>
         </div>
       </div>
 
-      <div class="space-y-4">
-        <div class="text-center space-y-1"><h2 class="text-2xl font-bold text-white">The SAIL Procurement Paradigm Shift</h2><p class="text-xs text-slate-400 max-w-2xl mx-auto">Why reactive spot market booking leaks millions annually & how intelligent chartering solves it</p></div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="p-6 rounded-2xl border border-rose-900/50 bg-gradient-to-br from-rose-950/30 via-steel-900 to-steel-900 space-y-4">
-            <div class="flex items-center space-x-3"><div class="w-10 h-10 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold"><i data-lucide="x-circle" class="w-6 h-6"></i></div><div><h3 class="font-bold text-white text-base">Current SAIL Status Quo</h3><span class="text-xs text-rose-400 font-semibold">Reactive Daily Spot Booking</span></div></div>
-            <ul class="space-y-2.5 text-xs text-slate-300">
-              <li class="flex items-start space-x-2"><i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400 shrink-0 mt-0.5"></i><span><b>Market Price Taker:</b> Enters spot market on parcel arrival day regardless of peak rates.</span></li>
-              <li class="flex items-start space-x-2"><i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400 shrink-0 mt-0.5"></i><span><b>Manual Draft Verification:</b> High risk of draft overruns or unexpected demurrage at restricted berths.</span></li>
-              <li class="flex items-start space-x-2"><i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400 shrink-0 mt-0.5"></i><span><b>Zero Forward Timing Intelligence:</b> Cannot anticipate rate dips during Chinese New Year or Asian monsoon slowdowns.</span></li>
-            </ul>
+      <!-- KPI Stat Strip -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px;">
+        <div class="stat-card">
+          <div style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;">12-Month Savings</div>
+          <div style="font-size:1.75rem;font-weight:700;color:#f1f5f9;letter-spacing:-0.02em;font-family:'JetBrains Mono',monospace;">$2.07M</div>
+          <div style="font-size:0.75rem;color:#0d9488;margin-top:4px;display:flex;align-items:center;gap:4px;font-weight:500;"><i data-lucide="trending-up" style="width:12px;height:12px;"></i>vs. reactive spot booking</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;">Decision Win Rate</div>
+          <div style="font-size:1.75rem;font-weight:700;color:#f1f5f9;letter-spacing:-0.02em;font-family:'JetBrains Mono',monospace;">83.3%</div>
+          <div style="font-size:0.75rem;color:#64748b;margin-top:4px;">20 of 24 cycles outperformed spot</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;">Ports Integrated</div>
+          <div style="font-size:1.75rem;font-weight:700;color:#f1f5f9;letter-spacing:-0.02em;font-family:'JetBrains Mono',monospace;">7</div>
+          <div style="font-size:0.75rem;color:#64748b;margin-top:4px;">East Coast — Paradip to Haldia</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;">Forecast Horizon</div>
+          <div style="font-size:1.75rem;font-weight:700;color:#f1f5f9;letter-spacing:-0.02em;font-family:'JetBrains Mono',monospace;">45d</div>
+          <div style="font-size:0.75rem;color:#64748b;margin-top:4px;">80% & 95% confidence bands</div>
+        </div>
+      </div>
+
+      <!-- Two Column: Problem/Solution -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;">
+        <div class="panel" style="padding:24px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+            <div style="width:6px;height:20px;background:#dc2626;border-radius:2px;"></div>
+            <div>
+              <div style="font-size:0.875rem;font-weight:600;color:#f1f5f9;">Current State — Reactive Procurement</div>
+              <div style="font-size:0.75rem;color:#64748b;">Manual spot booking on demand day</div>
+            </div>
           </div>
-          <div class="p-6 rounded-2xl border border-emerald-500/40 bg-gradient-to-br from-emerald-950/30 via-steel-900 to-steel-900 space-y-4">
-            <div class="flex items-center space-x-3"><div class="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold"><i data-lucide="check-circle-2" class="w-6 h-6"></i></div><div><h3 class="font-bold text-white text-base">Intelligent Anticipatory Engine</h3><span class="text-xs text-emerald-400 font-semibold">Data-Driven 'Wait vs. Book' Optimization</span></div></div>
-            <ul class="space-y-2.5 text-xs text-slate-300">
-              <li class="flex items-start space-x-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i><span><b>Multi-Horizon Rate Forecasting:</b> Predicts BCI/BPI sub-indices with 80% & 95% confidence bands.</span></li>
-              <li class="flex items-start space-x-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i><span><b>Deterministic Port Gatekeeper:</b> Verifies LOA, beam, and dynamic load draft for all 7 East Coast ports.</span></li>
-              <li class="flex items-start space-x-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i><span><b>Net Cost Optimization:</b> Computes rate savings minus daily holding cost to pinpoint the exact booking day.</span></li>
-            </ul>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:flex-start;gap:10px;"><i data-lucide="x" style="width:14px;height:14px;color:#dc2626;flex-shrink:0;margin-top:2px;"></i><span style="font-size:0.8125rem;color:#94a3b8;line-height:1.5;"><b style="color:#f1f5f9;">Spot-rate exposure</b> — Books at prevailing market regardless of freight cycle position.</span></div>
+            <div style="display:flex;align-items:flex-start;gap:10px;"><i data-lucide="x" style="width:14px;height:14px;color:#dc2626;flex-shrink:0;margin-top:2px;"></i><span style="font-size:0.8125rem;color:#94a3b8;line-height:1.5;"><b style="color:#f1f5f9;">Manual draft verification</b> — Berth limit checks done manually, risk of demurrage.</span></div>
+            <div style="display:flex;align-items:flex-start;gap:10px;"><i data-lucide="x" style="width:14px;height:14px;color:#dc2626;flex-shrink:0;margin-top:2px;"></i><span style="font-size:0.8125rem;color:#94a3b8;line-height:1.5;"><b style="color:#f1f5f9;">No forward intelligence</b> — Cannot capitalize on seasonal rate dips or index dislocations.</span></div>
+          </div>
+        </div>
+        <div class="panel" style="padding:24px;border-color:rgba(13,148,136,0.3);">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+            <div style="width:6px;height:20px;background:#0d9488;border-radius:2px;"></div>
+            <div>
+              <div style="font-size:0.875rem;font-weight:600;color:#f1f5f9;">FreightIQ — Anticipatory Intelligence</div>
+              <div style="font-size:0.75rem;color:#64748b;">Data-driven Wait vs. Book optimization</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:flex-start;gap:10px;"><i data-lucide="check" style="width:14px;height:14px;color:#0d9488;flex-shrink:0;margin-top:2px;"></i><span style="font-size:0.8125rem;color:#94a3b8;line-height:1.5;"><b style="color:#f1f5f9;">Multi-horizon forecasting</b> — BCI/BPI sub-index predictions with probabilistic confidence cones.</span></div>
+            <div style="display:flex;align-items:flex-start;gap:10px;"><i data-lucide="check" style="width:14px;height:14px;color:#0d9488;flex-shrink:0;margin-top:2px;"></i><span style="font-size:0.8125rem;color:#94a3b8;line-height:1.5;"><b style="color:#f1f5f9;">Deterministic port gatekeeper</b> — Automatic LOA, beam, and UKC validation for all 7 EC ports.</span></div>
+            <div style="display:flex;align-items:flex-start;gap:10px;"><i data-lucide="check" style="width:14px;height:14px;color:#0d9488;flex-shrink:0;margin-top:2px;"></i><span style="font-size:0.8125rem;color:#94a3b8;line-height:1.5;"><b style="color:#f1f5f9;">Net cost optimization</b> — Calculates exact booking day balancing rate savings against holding cost.</span></div>
           </div>
         </div>
       </div>
 
-      <div class="space-y-4">
-        <div class="flex items-center justify-between"><div><h2 class="text-xl font-bold text-white">Pre-Configured Operational Scenarios</h2><p class="text-xs text-slate-400">Click any scenario to instantly load and execute the complete pipeline</p></div><span class="text-xs text-brand-400 font-semibold">1-Click Demos</span></div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div onclick="loadScenario('scenario-1')" class="p-4 rounded-xl border border-amber-500/30 bg-steel-900 hover:border-amber-500 transition-all cursor-pointer group space-y-3"><div class="flex justify-between items-center"><span class="px-2 py-0.5 text-[9px] font-black rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">SIH OFFICIAL</span><span class="text-xs text-slate-400 group-hover:text-amber-400 transition-colors"><i data-lucide="arrow-right" class="w-4 h-4"></i></span></div><h3 class="font-bold text-white text-sm group-hover:text-amber-300 transition-colors">75,000 MT Coking Coal</h3><p class="text-[11px] text-slate-400">Australia (Hay Point) &rarr; Paradip Port (Kamsarmax direct berthing & rate dip wait)</p></div>
-          <div onclick="loadScenario('scenario-2')" class="p-4 rounded-xl border border-emerald-500/30 bg-steel-900 hover:border-emerald-500 transition-all cursor-pointer group space-y-3"><div class="flex justify-between items-center"><span class="px-2 py-0.5 text-[9px] font-black rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">CAPESIZE SCALE</span><span class="text-xs text-slate-400 group-hover:text-emerald-400 transition-colors"><i data-lucide="arrow-right" class="w-4 h-4"></i></span></div><h3 class="font-bold text-white text-sm group-hover:text-emerald-300 transition-colors">160,000 MT Met Coal</h3><p class="text-[11px] text-slate-400">Australia &rarr; Gangavaram Port (Deepwater 20m draft, 55,000 TPD high-speed discharge)</p></div>
-          <div onclick="loadScenario('scenario-3')" class="p-4 rounded-xl border border-purple-500/30 bg-steel-900 hover:border-purple-500 transition-all cursor-pointer group space-y-3"><div class="flex justify-between items-center"><span class="px-2 py-0.5 text-[9px] font-black rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">LIGHTERAGE HUB</span><span class="text-xs text-slate-400 group-hover:text-purple-400 transition-colors"><i data-lucide="arrow-right" class="w-4 h-4"></i></span></div><h3 class="font-bold text-white text-sm group-hover:text-purple-300 transition-colors">40,000 MT Boiler Coal</h3><p class="text-[11px] text-slate-400">Indonesia &rarr; Haldia Dock Complex (River draft lock & Sandheads transshipment)</p></div>
-          <div onclick="loadScenario('scenario-4')" class="p-4 rounded-xl border border-sky-500/30 bg-steel-900 hover:border-sky-500 transition-all cursor-pointer group space-y-3"><div class="flex justify-between items-center"><span class="px-2 py-0.5 text-[9px] font-black rounded bg-sky-500/20 text-sky-300 border border-sky-500/30">LONG HAUL SUEZ</span><span class="text-xs text-slate-400 group-hover:text-sky-400 transition-colors"><i data-lucide="arrow-right" class="w-4 h-4"></i></span></div><h3 class="font-bold text-white text-sm group-hover:text-sky-300 transition-colors">70,000 MT Russian PCI</h3><p class="text-[11px] text-slate-400">Ust-Luga (Russia) &rarr; Vizag Outer Harbor via Suez Canal toll optimization</p></div>
+      <!-- Scenario Cards -->
+      <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:0.8125rem;font-weight:600;color:#f1f5f9;">Operational Scenarios</div>
+        <span style="font-size:0.75rem;color:#64748b;">Select a preset to run the full optimization pipeline</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+        <div onclick="loadScenario('scenario-1')" style="cursor:pointer;" class="panel" onmouseover="this.style.borderColor='rgba(37,99,235,0.4)'" onmouseout="this.style.borderColor='#1a2332'" >
+          <div style="padding:16px 18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span class="badge badge-blue">SIH OFFICIAL</span><i data-lucide="arrow-right" style="width:14px;height:14px;color:#3a4a5e;"></i></div>
+            <div style="font-size:0.875rem;font-weight:600;color:#f1f5f9;margin-bottom:4px;">75,000 MT HCC</div>
+            <div style="font-size:0.75rem;color:#64748b;line-height:1.5;">Hay Point, Australia → Paradip Port · Kamsarmax</div>
+          </div>
+        </div>
+        <div onclick="loadScenario('scenario-2')" style="cursor:pointer;" class="panel" onmouseover="this.style.borderColor='rgba(13,148,136,0.4)'" onmouseout="this.style.borderColor='#1a2332'">
+          <div style="padding:16px 18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span class="badge badge-teal">CAPESIZE</span><i data-lucide="arrow-right" style="width:14px;height:14px;color:#3a4a5e;"></i></div>
+            <div style="font-size:0.875rem;font-weight:600;color:#f1f5f9;margin-bottom:4px;">160,000 MT Met Coal</div>
+            <div style="font-size:0.75rem;color:#64748b;line-height:1.5;">Australia → Gangavaram · 20m deepwater</div>
+          </div>
+        </div>
+        <div onclick="loadScenario('scenario-3')" style="cursor:pointer;" class="panel" onmouseover="this.style.borderColor='rgba(217,119,6,0.4)'" onmouseout="this.style.borderColor='#1a2332'">
+          <div style="padding:16px 18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span class="badge badge-amber">LIGHTERAGE</span><i data-lucide="arrow-right" style="width:14px;height:14px;color:#3a4a5e;"></i></div>
+            <div style="font-size:0.875rem;font-weight:600;color:#f1f5f9;margin-bottom:4px;">40,000 MT Boiler Coal</div>
+            <div style="font-size:0.75rem;color:#64748b;line-height:1.5;">Indonesia → Haldia · Sandheads transship</div>
+          </div>
+        </div>
+        <div onclick="loadScenario('scenario-4')" style="cursor:pointer;" class="panel" onmouseover="this.style.borderColor='rgba(100,116,139,0.4)'" onmouseout="this.style.borderColor='#1a2332'">
+          <div style="padding:16px 18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span class="badge badge-slate">LONG HAUL</span><i data-lucide="arrow-right" style="width:14px;height:14px;color:#3a4a5e;"></i></div>
+            <div style="font-size:0.875rem;font-weight:600;color:#f1f5f9;margin-bottom:4px;">70,000 MT PCI Coal</div>
+            <div style="font-size:0.75rem;color:#64748b;line-height:1.5;">Ust-Luga, Russia → Vizag · via Suez</div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- VIEW 2: CHARTER DECISION OPTIMIZER -->
-    <section id="view-optimizer" class="space-y-6 hidden">
-      <div class="flex items-center space-x-2 overflow-x-auto pb-1 text-xs">
-        <span class="text-slate-400 font-semibold shrink-0 uppercase tracking-wider text-[10px]">Quick Presets:</span>
-        <button onclick="loadScenario('scenario-1')" class="px-3 py-1.5 rounded-lg bg-steel-850 hover:bg-steel-800 border border-amber-500/30 text-amber-300 font-medium shrink-0 cursor-pointer">75k MT Aus &rarr; Paradip</button>
-        <button onclick="loadScenario('scenario-2')" class="px-3 py-1.5 rounded-lg bg-steel-850 hover:bg-steel-800 border border-emerald-500/30 text-emerald-300 font-medium shrink-0 cursor-pointer">160k MT Aus &rarr; Gangavaram</button>
-        <button onclick="loadScenario('scenario-3')" class="px-3 py-1.5 rounded-lg bg-steel-850 hover:bg-steel-800 border border-purple-500/30 text-purple-300 font-medium shrink-0 cursor-pointer">40k MT Ind &rarr; Haldia</button>
-        <button onclick="loadScenario('scenario-4')" class="px-3 py-1.5 rounded-lg bg-steel-850 hover:bg-steel-800 border border-sky-500/30 text-sky-300 font-medium shrink-0 cursor-pointer">70k MT Rus &rarr; Vizag</button>
+    <!-- VIEW: OPTIMIZER -->
+    <section id="view-optimizer" style="display:none;">
+
+      <!-- Preset Strip -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:2px;">
+        <span style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">Presets:</span>
+        <button onclick="loadScenario('scenario-1')" class="btn-ghost" style="white-space:nowrap;font-size:0.75rem;">75k HCC · Paradip</button>
+        <button onclick="loadScenario('scenario-2')" class="btn-ghost" style="white-space:nowrap;font-size:0.75rem;">160k Coal · Gangavaram</button>
+        <button onclick="loadScenario('scenario-3')" class="btn-ghost" style="white-space:nowrap;font-size:0.75rem;">40k Coal · Haldia</button>
+        <button onclick="loadScenario('scenario-4')" class="btn-ghost" style="white-space:nowrap;font-size:0.75rem;">70k PCI · Vizag</button>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div class="lg:col-span-4 bg-steel-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
-          <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
-            <h3 class="font-bold text-white text-sm flex items-center space-x-2"><i data-lucide="sliders" class="w-4 h-4 text-brand-400"></i><span>Procurement Inputs</span></h3>
-            <span class="text-[10px] bg-brand-500/20 text-brand-300 px-2 py-0.5 rounded font-bold border border-brand-500/30">SAIL Bulk Desk</span>
+      <div style="display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start;">
+
+        <!-- LEFT: Inputs Panel -->
+        <div class="panel" style="padding:20px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #111720;">
+            <div style="font-size:0.875rem;font-weight:600;color:#f1f5f9;">Procurement Parameters</div>
+            <span class="badge badge-blue">SAIL</span>
           </div>
 
-          <form id="optimizer-form" class="space-y-3.5">
+          <form id="optimizer-form" style="display:flex;flex-direction:column;gap:14px;">
             <div>
-              <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Bulk Commodity</label>
-              <select id="inp-commodity" class="w-full bg-steel-850 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                <option value="Coking Coal" selected>Hard Coking Coal (HCC) - Blast Furnace</option>
-                <option value="PCI Coal">PCI Coal (Pulverized Coal Injection)</option>
-                <option value="Thermal Coal">Thermal Coal / Boiler Coal</option>
+              <label style="display:block;font-size:10px;font-weight:600;color:#64748b;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">Commodity</label>
+              <select id="inp-commodity" class="input-field">
+                <option value="Coking Coal">Hard Coking Coal (HCC)</option>
+                <option value="PCI Coal">PCI Coal</option>
+                <option value="Thermal Coal">Thermal / Boiler Coal</option>
                 <option value="Limestone">Limestone (Flux)</option>
-                <option value="Iron Ore">Iron Ore Pellets / Lumps</option>
+                <option value="Iron Ore">Iron Ore</option>
               </select>
             </div>
 
             <div>
-              <div class="flex justify-between items-center mb-1">
-                <label class="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">Parcel Tonnage</label>
-                <span id="tonnage-display" class="text-xs font-bold text-brand-400">75,000 MT</span>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <label style="font-size:10px;font-weight:600;color:#64748b;letter-spacing:0.06em;text-transform:uppercase;">Parcel Size</label>
+                <span id="tonnage-display" class="mono" style="font-size:0.8125rem;font-weight:600;color:#93c5fd;">75,000 MT</span>
               </div>
-              <input type="range" id="inp-tonnage-slider" min="25000" max="180000" step="5000" value="75000" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-brand-500">
-              <div class="flex justify-between text-[9px] text-slate-500 mt-1">
-                <span>Handysize (30k)</span><span>Panamax (75k)</span><span>Capesize (160k+)</span>
+              <input type="range" id="inp-tonnage-slider" min="25000" max="180000" step="5000" value="75000" style="width:100%;accent-color:#2563eb;height:3px;">
+              <div style="display:flex;justify-content:space-between;margin-top:4px;">
+                <span style="font-size:9px;color:#3a4a5e;">Handysize</span>
+                <span style="font-size:9px;color:#3a4a5e;">Panamax</span>
+                <span style="font-size:9px;color:#3a4a5e;">Capesize</span>
               </div>
             </div>
 
             <div>
-              <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Loading Port (Origin)</label>
-              <select id="inp-origin" class="w-full bg-steel-850 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                <option value="AUHPT" selected>Hay Point / Gladstone (Australia - 4,650 NM)</option>
-                <option value="IDTBO">Taboneo / Samarinda (Indonesia - 2,300 NM)</option>
-                <option value="MZMPM">Maputo / Matola (Mozambique - 4,400 NM)</option>
-                <option value="RUUST">Ust-Luga / Taman (Russia - 8,600 NM via Suez)</option>
-                <option value="USHRD">Hampton Roads (USA - 9,200 NM via Cape)</option>
+              <label style="display:block;font-size:10px;font-weight:600;color:#64748b;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">Load Port (Origin)</label>
+              <select id="inp-origin" class="input-field">
+                <option value="AUHPT">Hay Point / Gladstone — Australia</option>
+                <option value="IDTBO">Taboneo / Samarinda — Indonesia</option>
+                <option value="MZMPM">Maputo / Matola — Mozambique</option>
+                <option value="RUUST">Ust-Luga / Taman — Russia (Suez)</option>
+                <option value="USHRD">Hampton Roads — USA (Cape)</option>
               </select>
             </div>
 
             <div>
-              <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Discharge Port (East Coast)</label>
-              <select id="inp-dest" class="w-full bg-steel-850 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                <option value="INPRT" selected>Paradip Port (Draft 14.5m | Feeds RSP / BSP)</option>
-                <option value="INVTZ">Visakhapatnam - Vizag (Draft 18.1m Outer | Feeds RINL/SAIL)</option>
-                <option value="INGNR">Gangavaram Port (Draft 20.0m Deepwater Capesize)</option>
-                <option value="INDHR">Dhamra Port (Draft 18.0m | Feeds BSL / RSP)</option>
-                <option value="INGPL">Gopalpur Port (Draft 13.5m | Supramax/Handymax)</option>
-                <option value="INHLD">Haldia Dock Complex (Draft 8.0m Riverine | Feeds DSP/ISP)</option>
-                <option value="INSND">Sagar / Sandheads Anchorage (Transshipment Hub)</option>
+              <label style="display:block;font-size:10px;font-weight:600;color:#64748b;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">Discharge Port — East Coast</label>
+              <select id="inp-dest" class="input-field">
+                <option value="INPRT">Paradip · Draft 14.5m</option>
+                <option value="INVTZ">Visakhapatnam · Draft 18.1m</option>
+                <option value="INGNR">Gangavaram · Draft 20.0m</option>
+                <option value="INDHR">Dhamra · Draft 18.0m</option>
+                <option value="INGPL">Gopalpur · Draft 13.5m</option>
+                <option value="INHLD">Haldia · Draft 8.0m (River)</option>
+                <option value="INSND">Sagar / Sandheads (Anchorage)</option>
               </select>
             </div>
 
             <div>
-              <div class="flex justify-between items-center mb-1">
-                <label class="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">Laycan Target Horizon</label>
-                <span id="laycan-display" class="text-xs font-bold text-amber-400">21 Days Ahead</span>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <label style="font-size:10px;font-weight:600;color:#64748b;letter-spacing:0.06em;text-transform:uppercase;">Laycan Horizon</label>
+                <span id="laycan-display" class="mono" style="font-size:0.8125rem;font-weight:600;color:#fbbf24;">21 days</span>
               </div>
-              <input type="range" id="inp-laycan" min="7" max="45" step="1" value="21" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500">
+              <input type="range" id="inp-laycan" min="7" max="45" step="1" value="21" style="width:100%;accent-color:#d97706;height:3px;">
             </div>
 
-            <div class="grid grid-cols-2 gap-2 pt-1">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
               <div>
-                <label class="block text-[10px] text-slate-400 uppercase font-semibold mb-1">Holding Cost ($/d)</label>
-                <input type="number" id="inp-holding-cost" value="2500" class="w-full bg-steel-850 border border-slate-700 rounded px-2.5 py-1 text-xs text-white">
+                <label style="display:block;font-size:10px;font-weight:600;color:#64748b;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">Hold Cost (USD/d)</label>
+                <input type="number" id="inp-holding-cost" value="2500" class="input-field">
               </div>
               <div>
-                <label class="block text-[10px] text-slate-400 uppercase font-semibold mb-1">Risk Strategy</label>
-                <select id="inp-risk-strategy" class="w-full bg-steel-850 border border-slate-700 rounded px-2 py-1 text-xs text-white">
+                <label style="display:block;font-size:10px;font-weight:600;color:#64748b;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">Risk Profile</label>
+                <select id="inp-risk-strategy" class="input-field">
                   <option value="CONSERVATIVE">Conservative</option>
                   <option value="BALANCED" selected>Balanced</option>
                   <option value="AGGRESSIVE">Aggressive</option>
@@ -279,180 +376,293 @@
               </div>
             </div>
 
-            <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-brand-600/30 flex items-center justify-center space-x-2 transition-all cursor-pointer">
-              <i data-lucide="zap" class="w-3.5 h-3.5"></i><span>Run Optimization Engine</span>
+            <button type="submit" class="btn-primary" style="width:100%;justify-content:center;padding:10px;font-size:0.875rem;">
+              <i data-lucide="zap" style="width:14px;height:14px;"></i>Run Optimization
             </button>
           </form>
         </div>
 
-        <div class="lg:col-span-8 space-y-6">
-          <div id="decision-banner" class="bg-gradient-to-r from-emerald-950/80 via-steel-900 to-steel-900 border border-emerald-500/40 rounded-2xl p-5 shadow-xl">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div class="flex items-center space-x-3">
-                <div id="decision-icon-badge" class="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center text-emerald-400">
-                  <i data-lucide="clock" class="w-6 h-6"></i>
+        <!-- RIGHT: Results -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+          <!-- Decision Card -->
+          <div id="decision-banner" class="panel" style="padding:20px;border-color:rgba(13,148,136,0.3);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+              <div style="display:flex;align-items:center;gap:14px;">
+                <div id="decision-icon-badge" style="width:44px;height:44px;background:rgba(13,148,136,0.12);border:1px solid rgba(13,148,136,0.25);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#0d9488;">
+                  <i data-lucide="clock" style="width:20px;height:20px;"></i>
                 </div>
                 <div>
-                  <div class="flex items-center space-x-2">
-                    <span id="decision-action-tag" class="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-500 text-slate-950 tracking-wider">WAIT TO BOOK</span>
-                    <span id="decision-confidence" class="text-xs text-emerald-400 font-semibold">Confidence: 84%</span>
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                    <span id="decision-action-tag" class="badge badge-teal" style="font-size:11px;padding:3px 10px;">WAIT TO BOOK</span>
+                    <span id="decision-confidence" style="font-size:0.75rem;color:#64748b;font-weight:500;">Confidence 84%</span>
                   </div>
-                  <h2 id="decision-headline" class="text-base sm:text-lg font-bold text-white mt-1">Recommended Booking: Day 9 (Sept 09)</h2>
+                  <div id="decision-headline" style="font-size:1rem;font-weight:600;color:#f1f5f9;">Optimal booking: Day 9 — 09 Sep 2026</div>
                 </div>
               </div>
-              <div class="bg-steel-850 border border-slate-700/80 rounded-xl px-4 py-2 text-right shrink-0">
-                <span class="text-[10px] text-slate-400 block font-semibold uppercase">Projected Net Savings</span>
-                <span id="decision-savings-usd" class="text-xl font-black text-emerald-400">$105,000 USD</span>
-                <span id="decision-savings-pct" class="text-xs text-slate-400 block">(9.8% freight reduction)</span>
+              <div style="text-align:right;">
+                <div style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">Projected Savings</div>
+                <div id="decision-savings-usd" class="mono" style="font-size:1.5rem;font-weight:700;color:#0d9488;">$105,000</div>
+                <div id="decision-savings-pct" style="font-size:0.75rem;color:#64748b;">9.8% reduction</div>
               </div>
             </div>
-            <p id="decision-summary-text" class="text-xs text-slate-300 mt-3 pt-3 border-t border-slate-800 leading-relaxed">
-              Delaying booking captures forecasted downward pressure on Panamax/Kamsarmax rates, reducing freight while maintaining adequate laycan buffer.
-            </p>
-            <div class="flex justify-end pt-2">
-              <button onclick="openProcurementMemo()" class="text-xs text-brand-300 hover:text-white flex items-center space-x-1.5 bg-steel-850 hover:bg-steel-800 px-3 py-1.5 rounded-lg border border-slate-700 transition-all cursor-pointer">
-                <i data-lucide="file-check-2" class="w-3.5 h-3.5 text-brand-400"></i><span>Generate Board Approval Memo</span>
+            <div id="decision-summary-text" style="font-size:0.8125rem;color:#64748b;margin-top:14px;padding-top:14px;border-top:1px solid #111720;line-height:1.6;">
+              Delaying captures forecasted downward pressure on Panamax/Kamsarmax rates while maintaining adequate laycan buffer.
+            </div>
+            <div style="margin-top:12px;display:flex;justify-content:flex-end;">
+              <button onclick="openProcurementMemo()" class="btn-ghost" style="font-size:0.75rem;">
+                <i data-lucide="file-text" style="width:13px;height:13px;"></i>Board Approval Memo
               </button>
             </div>
           </div>
 
-          <div class="bg-steel-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+          <!-- Forecast Chart -->
+          <div class="panel" style="padding:20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
               <div>
-                <h3 class="font-bold text-white text-sm flex items-center space-x-2"><i data-lucide="trending-down" class="w-4 h-4 text-brand-400"></i><span>Freight Rate Forecast & Confidence Cone</span></h3>
-                <p class="text-[11px] text-slate-400">USD per Metric Ton with expanding 80% & 95% confidence bands</p>
+                <div style="font-size:0.875rem;font-weight:600;color:#f1f5f9;">Rate Forecast — 30-Day Horizon</div>
+                <div style="font-size:0.75rem;color:#64748b;margin-top:2px;">USD/MT with 80% confidence band</div>
               </div>
-              <div class="flex items-center space-x-3 text-[11px]">
-                <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-brand-400"></span><span class="text-slate-300">Spot</span></span>
-                <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span><span class="text-slate-300">Forecast</span></span>
-                <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span><span class="text-slate-300">Optimal Lock-in</span></span>
+              <div style="display:flex;align-items:center;gap:12px;font-size:0.6875rem;color:#64748b;">
+                <span style="display:flex;align-items:center;gap:4px;"><span style="width:16px;height:2px;background:#2563eb;display:inline-block;border-radius:1px;"></span>Spot</span>
+                <span style="display:flex;align-items:center;gap:4px;"><span style="width:16px;height:2px;background:#d97706;display:inline-block;border-radius:1px;"></span>Forecast</span>
+                <span style="display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;background:#0d9488;border-radius:50%;display:inline-block;"></span>Lock-in</span>
               </div>
             </div>
-            <div class="h-64 w-full"><canvas id="forecastChart"></canvas></div>
+            <div style="height:220px;"><canvas id="forecastChart"></canvas></div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-steel-900 border border-slate-800 rounded-2xl p-5 space-y-3 shadow-xl">
-              <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                <h4 class="font-bold text-white text-xs flex items-center space-x-2"><i data-lucide="ship" class="w-3.5 h-3.5 text-brand-400"></i><span>Vessel Fit & Under-Keel Clearance</span></h4>
-                <span id="recommended-vessel-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-brand-500/20 text-brand-300 border border-brand-500/40">Kamsarmax</span>
+          <!-- Bottom Row: Vessels + Economics -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+            <!-- Vessel Fit -->
+            <div class="panel" style="padding:20px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #111720;">
+                <div style="font-size:0.875rem;font-weight:600;color:#f1f5f9;">Vessel Fit Analysis</div>
+                <span id="recommended-vessel-badge" class="badge badge-blue">Kamsarmax</span>
               </div>
-              <div id="vessel-list" class="space-y-2 text-xs max-h-56 overflow-y-auto pr-1"></div>
+              <div id="vessel-list" style="display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto;"></div>
             </div>
 
-            <div class="bg-steel-900 border border-slate-800 rounded-2xl p-5 space-y-3 shadow-xl">
-              <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                <h4 class="font-bold text-white text-xs flex items-center space-x-2"><i data-lucide="calculator" class="w-3.5 h-3.5 text-brand-400"></i><span>Voyage Economics & Landed Cost</span></h4>
-                <span class="text-[10px] text-slate-400">CIF East Coast</span>
+            <!-- Voyage Economics -->
+            <div class="panel" style="padding:20px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #111720;">
+                <div style="font-size:0.875rem;font-weight:600;color:#f1f5f9;">Voyage Economics</div>
+                <span style="font-size:0.6875rem;color:#64748b;">CIF East Coast</span>
               </div>
-              <div class="space-y-1.5 text-xs">
-                <div class="flex justify-between py-1 border-b border-slate-800/60"><span class="text-slate-400">Voyage Duration:</span><span id="eco-duration" class="font-semibold text-slate-200">14.5 Sea + 3.0 Port Days</span></div>
-                <div class="flex justify-between py-1 border-b border-slate-800/60"><span class="text-slate-400">VLSFO Consumed:</span><span id="eco-bunker" class="font-semibold text-slate-200">427.8 MT ($265,200)</span></div>
-                <div class="flex justify-between py-1 border-b border-slate-800/60"><span class="text-slate-400">Vessel Charter Hire:</span><span id="eco-charter" class="font-semibold text-slate-200">$311,500</span></div>
-                <div class="flex justify-between py-1 border-b border-slate-800/60"><span class="text-slate-400">Port & Canal Dues:</span><span id="eco-dues" class="font-semibold text-slate-200">$65,000</span></div>
-                <div class="flex justify-between py-1.5 font-bold text-xs bg-steel-850 px-2 rounded-lg"><span class="text-slate-200">Landed Freight / MT:</span><span id="eco-freight-rate" class="text-amber-400 font-mono font-bold">$14.20 / MT</span></div>
+              <div style="display:flex;flex-direction:column;">
+                <div class="data-row"><span style="font-size:0.8125rem;color:#64748b;">Voyage duration</span><span id="eco-duration" class="mono" style="font-size:0.8125rem;color:#f1f5f9;font-weight:500;">14.5 + 3.0 days</span></div>
+                <div class="data-row"><span style="font-size:0.8125rem;color:#64748b;">VLSFO consumed</span><span id="eco-bunker" class="mono" style="font-size:0.8125rem;color:#f1f5f9;font-weight:500;">427.8 MT</span></div>
+                <div class="data-row"><span style="font-size:0.8125rem;color:#64748b;">Charter hire</span><span id="eco-charter" class="mono" style="font-size:0.8125rem;color:#f1f5f9;font-weight:500;">$311,500</span></div>
+                <div class="data-row"><span style="font-size:0.8125rem;color:#64748b;">Port & canal dues</span><span id="eco-dues" class="mono" style="font-size:0.8125rem;color:#f1f5f9;font-weight:500;">$65,000</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 10px;background:#06090f;border-radius:5px;margin-top:6px;">
+                  <span style="font-size:0.8125rem;font-weight:600;color:#f1f5f9;">Landed cost / MT</span>
+                  <span id="eco-freight-rate" class="mono" style="font-size:0.9375rem;font-weight:700;color:#fbbf24;">$14.20</span>
+                </div>
               </div>
-              <div class="pt-1"><div class="grid grid-cols-2 gap-2 text-[10px]"><div id="risk-monsoon" class="p-1.5 rounded bg-slate-800 text-slate-300 flex items-center space-x-1.5"><i data-lucide="cloud-sun" class="w-3.5 h-3.5 text-emerald-400"></i><span>Monsoon: Clear</span></div><div id="risk-congestion" class="p-1.5 rounded bg-slate-800 text-slate-300 flex items-center space-x-1.5"><i data-lucide="anchor" class="w-3.5 h-3.5 text-slate-400"></i><span>Queue: Normal (1.8d)</span></div></div></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;">
+                <div id="risk-monsoon" style="padding:7px 9px;background:#06090f;border-radius:5px;font-size:0.6875rem;color:#94a3b8;display:flex;align-items:center;gap:5px;"><i data-lucide="cloud-sun" style="width:12px;height:12px;color:#0d9488;"></i>Monsoon: Clear</div>
+                <div id="risk-congestion" style="padding:7px 9px;background:#06090f;border-radius:5px;font-size:0.6875rem;color:#94a3b8;display:flex;align-items:center;gap:5px;"><i data-lucide="anchor" style="width:12px;height:12px;color:#64748b;"></i>Queue: 1.8d</div>
+              </div>
             </div>
+
           </div>
         </div>
       </div>
     </section>
 
-    <!-- VIEW 3: MARKET INTELLIGENCE -->
-    <section id="view-market" class="space-y-6 hidden">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <div><h2 class="text-xl font-bold text-white flex items-center space-x-2"><i data-lucide="activity" class="w-5 h-5 text-brand-400"></i><span>Real-Time Maritime Indices & Energy Feeds</span></h2><p class="text-xs text-slate-400 mt-0.5">Baltic Sub-indices, VLSFO Benches, and East Coast Congestion</p></div>
-        <span class="text-xs px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span>Feed Live</span></span>
+    <!-- VIEW: MARKET -->
+    <section id="view-market" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+        <div>
+          <div style="font-size:1.125rem;font-weight:600;color:#f1f5f9;margin-bottom:4px;">Market Intelligence</div>
+          <div style="font-size:0.8125rem;color:#64748b;">Baltic dry indices, bunker fuel benchmarks, and port congestion status</div>
+        </div>
+        <span style="display:flex;align-items:center;gap:6px;font-size:0.75rem;font-weight:500;color:#0d9488;"><span style="width:6px;height:6px;background:#0d9488;border-radius:50%;animation:pulse 2s infinite;"></span>Live Feed</span>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="p-4 rounded-xl bg-steel-900 border border-slate-800 space-y-2"><div class="flex justify-between items-center text-xs text-slate-400"><span class="font-bold">BPI · Panamax Index</span><span class="text-emerald-400 font-semibold">+1.2%</span></div><div class="text-2xl font-black text-white" id="mkt-bpi">1,680</div><p class="text-[10px] text-slate-400">Benchmark for 75k–82k DWT Kamsarmax coal carriers</p></div>
-        <div class="p-4 rounded-xl bg-steel-900 border border-slate-800 space-y-2"><div class="flex justify-between items-center text-xs text-slate-400"><span class="font-bold">BCI · Capesize Index</span><span class="text-rose-400 font-semibold">-2.4%</span></div><div class="text-2xl font-black text-white" id="mkt-bci">2,850</div><p class="text-[10px] text-slate-400">Benchmark for 180k DWT iron ore & met coal loaders</p></div>
-        <div class="p-4 rounded-xl bg-steel-900 border border-slate-800 space-y-2"><div class="flex justify-between items-center text-xs text-slate-400"><span class="font-bold">BSI · Supramax Index</span><span class="text-slate-400 font-semibold">0.0%</span></div><div class="text-2xl font-black text-white" id="mkt-bsi">1,350</div><p class="text-[10px] text-slate-400">Geared bulk carriers for regional Asian trade</p></div>
-        <div class="p-4 rounded-xl bg-steel-900 border border-slate-800 space-y-2"><div class="flex justify-between items-center text-xs text-slate-400"><span class="font-bold">VLSFO Bunker Fuel</span><span class="text-amber-400 font-semibold">Singapore</span></div><div class="text-2xl font-black text-amber-300" id="mkt-vlsfo">$620.00 <span class="text-xs text-slate-400 font-normal">/ MT</span></div><p class="text-[10px] text-slate-400">0.50% Low Sulfur Marine Fuel primary bunker cost</p></div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">
+        <div class="stat-card">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px;"><span style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">BPI · Panamax</span><span style="font-size:0.75rem;color:#0d9488;font-weight:600;">+1.2%</span></div>
+          <div id="mkt-bpi" class="mono" style="font-size:1.625rem;font-weight:700;color:#f1f5f9;">1,680</div>
+          <div style="font-size:0.6875rem;color:#64748b;margin-top:4px;">75k–82k DWT Kamsarmax coal</div>
+        </div>
+        <div class="stat-card">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px;"><span style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">BCI · Capesize</span><span style="font-size:0.75rem;color:#dc2626;font-weight:600;">−2.4%</span></div>
+          <div id="mkt-bci" class="mono" style="font-size:1.625rem;font-weight:700;color:#f1f5f9;">2,850</div>
+          <div style="font-size:0.6875rem;color:#64748b;margin-top:4px;">180k DWT iron ore & met coal</div>
+        </div>
+        <div class="stat-card">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px;"><span style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">BSI · Supramax</span><span style="font-size:0.75rem;color:#64748b;font-weight:600;">0.0%</span></div>
+          <div id="mkt-bsi" class="mono" style="font-size:1.625rem;font-weight:700;color:#f1f5f9;">1,350</div>
+          <div style="font-size:0.6875rem;color:#64748b;margin-top:4px;">Geared bulk · Asian regional trade</div>
+        </div>
+        <div class="stat-card">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px;"><span style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">VLSFO · Singapore</span><span style="font-size:0.75rem;color:#d97706;font-weight:600;">Bunker</span></div>
+          <div id="mkt-vlsfo" class="mono" style="font-size:1.625rem;font-weight:700;color:#fbbf24;">$620</div>
+          <div style="font-size:0.6875rem;color:#64748b;margin-top:4px;">0.50% Low Sulfur / MT</div>
+        </div>
       </div>
-      <div class="bg-steel-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
-        <h3 class="font-bold text-white text-sm flex items-center space-x-2"><i data-lucide="anchor" class="w-4 h-4 text-brand-400"></i><span>East Coast Port Queue & Anchorage Status</span></h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs text-slate-300">
-            <thead class="bg-steel-850 text-slate-400 uppercase font-semibold text-[10px] border-b border-slate-800"><tr><th class="py-2.5 px-3">Port</th><th class="py-2.5 px-3">Vessels at Anchorage</th><th class="py-2.5 px-3">Avg Wait Time</th><th class="py-2.5 px-3">Discharge Speed</th><th class="py-2.5 px-3">Congestion Risk</th></tr></thead>
-            <tbody class="divide-y divide-slate-800">
-              <tr class="hover:bg-steel-850/50"><td class="py-2.5 px-3 font-bold text-white">Paradip Port (Mechanized CQ)</td><td class="py-2.5 px-3">4 Vessels</td><td class="py-2.5 px-3 text-slate-200">1.8 Days</td><td class="py-2.5 px-3 text-brand-300 font-semibold">30,000 TPD</td><td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">LOW</span></td></tr>
-              <tr class="hover:bg-steel-850/50"><td class="py-2.5 px-3 font-bold text-white">Visakhapatnam (Outer Harbor)</td><td class="py-2.5 px-3">6 Vessels</td><td class="py-2.5 px-3 text-slate-200">2.1 Days</td><td class="py-2.5 px-3 text-brand-300 font-semibold">35,000 TPD</td><td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300">MEDIUM</span></td></tr>
-              <tr class="hover:bg-steel-850/50"><td class="py-2.5 px-3 font-bold text-white">Gangavaram Port</td><td class="py-2.5 px-3">2 Vessels</td><td class="py-2.5 px-3 text-slate-200">1.2 Days</td><td class="py-2.5 px-3 text-brand-300 font-semibold">55,000 TPD</td><td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">OPTIMAL</span></td></tr>
-              <tr class="hover:bg-steel-850/50"><td class="py-2.5 px-3 font-bold text-white">Haldia Dock Complex (HDC)</td><td class="py-2.5 px-3">8 Vessels (River Lock)</td><td class="py-2.5 px-3 text-rose-300 font-semibold">3.4 Days</td><td class="py-2.5 px-3 text-brand-300 font-semibold">12,000 TPD</td><td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300">HIGH</span></td></tr>
-            </tbody>
+
+      <div class="panel" style="padding:0;overflow:hidden;">
+        <div style="padding:16px 20px;border-bottom:1px solid #111720;display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:0.875rem;font-weight:600;color:#f1f5f9;">East Coast Port Queue & Anchorage</div>
+          <span style="font-size:0.6875rem;color:#64748b;">Live anchorage data as of today</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:#06090f;">
+              <th style="text-align:left;padding:10px 20px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Port</th>
+              <th style="text-align:right;padding:10px 16px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Vessels</th>
+              <th style="text-align:right;padding:10px 16px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Avg Wait</th>
+              <th style="text-align:right;padding:10px 16px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Discharge Rate</th>
+              <th style="text-align:center;padding:10px 20px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Congestion</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid #0c1117;">
+              <td style="padding:12px 20px;font-size:0.8125rem;color:#f1f5f9;font-weight:500;">Paradip Port — Mechanized CQ</td>
+              <td class="mono" style="text-align:right;padding:12px 16px;font-size:0.8125rem;color:#94a3b8;">4</td>
+              <td class="mono" style="text-align:right;padding:12px 16px;font-size:0.8125rem;color:#f1f5f9;">1.8 days</td>
+              <td class="mono" style="text-align:right;padding:12px 16px;font-size:0.8125rem;color:#94a3b8;">30,000 TPD</td>
+              <td style="text-align:center;padding:12px 20px;"><span class="badge badge-teal">LOW</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #0c1117;">
+              <td style="padding:12px 20px;font-size:0.8125rem;color:#f1f5f9;font-weight:500;">Visakhapatnam — Outer Harbor</td>
+              <td class="mono" style="text-align:right;padding:12px 16px;font-size:0.8125rem;color:#94a3b8;">6</td>
+              <td class="mono" style="text-align:right;padding:12px 16px;font-size:0.8125rem;color:#f1f5f9;">2.1 days</td>
+              <td class="mono" style="text-align:right;padding:12px 16px;font-size:0.8125rem;color:#94a3b8;">35,000 TPD</td>
+              <td style="text-align:center;padding:12px 20px;"><span class="badge badge-amber">MEDIUM</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #0c1117;">
+              <td style="padding:12px 20px;font-size:0.8125rem;color:#f1f5f9;font-weight:500;">Gangavaram Port</td>
+              <td class="mono" style="text-align:right;padding:12px 16px;font-size:0.8125rem;color:#94a3b8;">2</td>
+              <td class="mono" style="text-align:right;padding:12px 16px;font-size:0.8125rem;color:#f1f5f9;">1.2 days</td>
+              <td class="mono" style="text-align:right;padding:12px 16px;font-size:0.8125rem;color:#94a3b8;">55,000 TPD</td>
+              <td style="text-align:center;padding:12px 20px;"><span class="badge badge-blue">OPTIMAL</span></td>
+            </tr>
+            <tr>
+              <td style="padding:12px 20px;font-size:0.8125rem;color:#f1f5f9;font-weight:500;">Haldia Dock Complex (HDC)</td>
+              <td class="mono" style="text-align:right;padding:12px 16px;font-size:0.8125rem;color:#94a3b8;">8</td>
+              <td class="mono" style="text-align:right;padding:12px 16px;font-size:0.8125rem;color:#dc2626;font-weight:600;">3.4 days</td>
+              <td class="mono" style="text-align:right;padding:12px 16px;font-size:0.8125rem;color:#94a3b8;">12,000 TPD</td>
+              <td style="text-align:center;padding:12px 20px;"><span class="badge badge-red">HIGH</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- VIEW: BACKTEST -->
+    <section id="view-backtest" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+        <div>
+          <div style="font-size:1.125rem;font-weight:600;color:#f1f5f9;margin-bottom:4px;">Walk-Forward Backtest</div>
+          <div style="font-size:0.8125rem;color:#64748b;">12-month simulation — Intelligent chartering vs. naive spot booking, 24 bi-weekly trade cycles</div>
+        </div>
+        <button onclick="loadBacktestData()" class="btn-ghost"><i data-lucide="refresh-cw" style="width:13px;height:13px;"></i>Rerun Simulation</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">
+        <div class="stat-card"><div style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;">Spot Spend (Naive)</div><div id="bt-spend-naive" class="mono" style="font-size:1.25rem;font-weight:700;color:#f1f5f9;">$24,850,000</div><div style="font-size:0.6875rem;color:#64748b;margin-top:4px;">Day-0 spot booking benchmark</div></div>
+        <div class="stat-card"><div style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;">Model Optimized Spend</div><div id="bt-spend-model" class="mono" style="font-size:1.25rem;font-weight:700;color:#93c5fd;">$22,785,000</div><div style="font-size:0.6875rem;color:#0d9488;margin-top:4px;">Intelligent timing applied</div></div>
+        <div class="stat-card" style="border-color:rgba(13,148,136,0.3);"><div style="font-size:10px;color:#0d9488;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;">Net Savings Captured</div><div id="bt-total-savings" class="mono" style="font-size:1.375rem;font-weight:700;color:#0d9488;">$2,065,000</div><div id="bt-savings-pct" style="font-size:0.6875rem;color:#64748b;margin-top:4px;">8.31% net reduction</div></div>
+        <div class="stat-card"><div style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;">Decision Win Rate</div><div id="bt-win-rate" class="mono" style="font-size:1.375rem;font-weight:700;color:#fbbf24;">83.3%</div><div style="font-size:0.6875rem;color:#64748b;margin-top:4px;">20 of 24 cycles outperformed</div></div>
+      </div>
+
+      <div class="panel" style="padding:0;overflow:hidden;">
+        <div style="padding:14px 20px;border-bottom:1px solid #111720;"><div style="font-size:0.875rem;font-weight:600;color:#f1f5f9;">Trade-by-Trade Log</div></div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;min-width:700px;">
+            <thead><tr style="background:#06090f;">
+              <th style="text-align:left;padding:10px 20px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">#</th>
+              <th style="text-align:left;padding:10px 14px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Date</th>
+              <th style="text-align:left;padding:10px 14px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Route · Vessel</th>
+              <th style="text-align:right;padding:10px 14px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Spot $/MT</th>
+              <th style="text-align:center;padding:10px 14px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Model</th>
+              <th style="text-align:right;padding:10px 14px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Booked $/MT</th>
+              <th style="text-align:right;padding:10px 14px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Savings $</th>
+              <th style="text-align:center;padding:10px 20px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Result</th>
+            </tr></thead>
+            <tbody id="backtest-table-body"></tbody>
           </table>
         </div>
       </div>
     </section>
 
-    <!-- VIEW 4: BACKTEST STUDIO -->
-    <section id="view-backtest" class="space-y-6 hidden">
-      <div class="bg-steel-900 border border-slate-800 rounded-2xl p-5 space-y-6 shadow-xl">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-          <div><h3 class="font-bold text-white text-base flex items-center space-x-2"><i data-lucide="line-chart" class="w-4 h-4 text-amber-400"></i><span>12-Month Walk-Forward Backtesting Engine</span></h3><p class="text-xs text-slate-400 mt-0.5">Evaluating Intelligent Chartering vs Naive Spot Booking across 24 bi-weekly cycles</p></div>
-          <button id="btn-run-backtest" onclick="loadBacktestData()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow cursor-pointer flex items-center space-x-1.5"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i><span>Rerun Simulation</span></button>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="bg-steel-850 border border-slate-700/70 rounded-xl p-4"><span class="text-[11px] text-slate-400 font-semibold block uppercase">Total Naive Spend</span><span id="bt-spend-naive" class="text-xl font-black text-slate-200">$24,850,000</span><span class="text-[10px] text-slate-400 block mt-0.5">Booking spot on day 0</span></div>
-          <div class="bg-steel-850 border border-slate-700/70 rounded-xl p-4"><span class="text-[11px] text-slate-400 font-semibold block uppercase">Model Optimized Spend</span><span id="bt-spend-model" class="text-xl font-black text-brand-400">$22,785,000</span><span class="text-[10px] text-emerald-400 block mt-0.5">Intelligent timing</span></div>
-          <div class="bg-steel-850 border border-emerald-500/40 rounded-xl p-4 bg-emerald-950/20"><span class="text-[11px] text-emerald-400 font-semibold block uppercase">Total Net Savings</span><span id="bt-total-savings" class="text-2xl font-black text-emerald-400">$2,065,000</span><span id="bt-savings-pct" class="text-[10px] text-emerald-300 block mt-0.5">8.31% net reduction</span></div>
-          <div class="bg-steel-850 border border-slate-700/70 rounded-xl p-4"><span class="text-[11px] text-slate-400 font-semibold block uppercase">Model Win Rate</span><span id="bt-win-rate" class="text-2xl font-black text-amber-400">83.3%</span><span class="text-[10px] text-slate-400 block mt-0.5">20 of 24 cycles beat spot</span></div>
-        </div>
-        <div class="overflow-x-auto"><table class="w-full text-left text-xs text-slate-300"><thead class="bg-steel-850 text-slate-400 uppercase font-semibold text-[10px] border-b border-slate-700"><tr><th class="py-3 px-3">#</th><th class="py-3 px-3">Readiness Date</th><th class="py-3 px-3">Route & Vessel</th><th class="py-3 px-3">Spot Rate ($/MT)</th><th class="py-3 px-3">Model Call</th><th class="py-3 px-3">Booked Rate ($/MT)</th><th class="py-3 px-3">Net Savings ($)</th><th class="py-3 px-3">Outcome</th></tr></thead><tbody id="backtest-table-body" class="divide-y divide-slate-800 font-mono text-xs"></tbody></table></div>
+    <!-- VIEW: PORTS -->
+    <section id="view-ports" style="display:none;">
+      <div style="margin-bottom:24px;">
+        <div style="font-size:1.125rem;font-weight:600;color:#f1f5f9;margin-bottom:4px;">Ports Constraint Registry</div>
+        <div style="font-size:0.8125rem;color:#64748b;">Verified physical constraints for SAIL East Coast bulk importing berths</div>
       </div>
-    </section>
-
-    <!-- VIEW 5: PORTS REGISTRY -->
-    <section id="view-ports" class="space-y-6 hidden">
-      <div class="bg-steel-900 border border-slate-800 rounded-2xl p-5 space-y-5 shadow-xl">
-        <div class="border-b border-slate-800 pb-3"><h3 class="font-bold text-white text-base flex items-center space-x-2"><i data-lucide="database" class="w-4 h-4 text-brand-400"></i><span>Indian East Coast Ports Physical Constraint Registry</span></h3><p class="text-xs text-slate-400 mt-0.5">Verifiable handbook constraints for major SAIL raw material importing berths</p></div>
-        <div class="overflow-x-auto"><table class="w-full text-left text-xs text-slate-300"><thead class="bg-steel-850 text-slate-400 uppercase font-semibold text-[10px] border-b border-slate-700"><tr><th class="py-3 px-3">Port Name</th><th class="py-3 px-3">Max Draft</th><th class="py-3 px-3">Max LOA</th><th class="py-3 px-3">Max Beam</th><th class="py-3 px-3">Max Vessel Class</th><th class="py-3 px-3">Discharge TPD</th><th class="py-3 px-3">Lighterage?</th><th class="py-3 px-3">Primary Steel Plant Feeder</th></tr></thead><tbody id="ports-table-body" class="divide-y divide-slate-800"></tbody></table></div>
+      <div class="panel" style="padding:0;overflow:hidden;">
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;min-width:900px;">
+            <thead><tr style="background:#06090f;">
+              <th style="text-align:left;padding:11px 20px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Port</th>
+              <th style="text-align:right;padding:11px 14px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Draft</th>
+              <th style="text-align:right;padding:11px 14px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">LOA</th>
+              <th style="text-align:right;padding:11px 14px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Beam</th>
+              <th style="text-align:left;padding:11px 14px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Max Vessel</th>
+              <th style="text-align:right;padding:11px 14px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Discharge TPD</th>
+              <th style="text-align:center;padding:11px 14px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Lighterage</th>
+              <th style="text-align:left;padding:11px 20px;font-size:10px;color:#3a4a5e;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #111720;">Steel Plant</th>
+            </tr></thead>
+            <tbody id="ports-table-body"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
   </main>
 
-  <!-- MODAL: PROCUREMENT MEMO -->
-  <div id="modal-memo" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white text-slate-900 rounded-2xl max-w-2xl w-full p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
-      <div class="border-b-2 border-slate-900 pb-4 flex justify-between items-start">
-        <div><span class="text-xs font-black tracking-widest text-slate-600 uppercase">STEEL AUTHORITY OF INDIA LIMITED</span><h2 class="text-xl font-black text-slate-900">BULK CHARTERING RECOMMENDATION MEMO</h2><span class="text-xs text-slate-500">Ministry of Steel · Decision Support Brief</span></div>
-        <button onclick="closeProcurementMemo()" class="text-slate-400 hover:text-slate-800 text-lg font-bold cursor-pointer">&times;</button>
+  <!-- MEMO MODAL -->
+  <div id="modal-memo" style="display:none;position:fixed;inset:0;background:rgba(2,5,8,0.85);backdrop-filter:blur(4px);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#0c1117;border:1px solid #1a2332;border-radius:12px;max-width:600px;width:100%;padding:32px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,0.6);">
+      <div style="padding-bottom:20px;margin-bottom:20px;border-bottom:1px solid #1a2332;display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">Steel Authority of India Limited — Ministry of Steel</div>
+          <div style="font-size:1.25rem;font-weight:700;color:#f1f5f9;letter-spacing:-0.01em;">Chartering Recommendation Memo</div>
+          <div style="font-size:0.75rem;color:#64748b;margin-top:3px;">Official Procurement Decision Brief · AI-Generated</div>
+        </div>
+        <button onclick="closeProcurementMemo()" style="background:none;border:none;color:#64748b;cursor:pointer;padding:4px;"><i data-lucide="x" style="width:18px;height:18px;"></i></button>
       </div>
-      <div class="grid grid-cols-2 gap-4 text-xs">
-        <div><span class="text-slate-500 font-semibold block">Memo ID:</span><span class="font-mono font-bold" id="memo-id">SAIL-CH-2026-0901</span></div>
-        <div><span class="text-slate-500 font-semibold block">Date & Timestamp:</span><span class="font-mono font-bold" id="memo-date">2026-08-31 18:30 IST</span></div>
-        <div><span class="text-slate-500 font-semibold block">Initiating Officer:</span><span class="font-bold" id="memo-officer">Devendra Tyagi (CPO)</span></div>
-        <div><span class="text-slate-500 font-semibold block">Designated Plant:</span><span class="font-bold">Rourkela & Bhilai Steel Plants</span></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+        <div><div style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">Memo ID</div><div id="memo-id" class="mono" style="font-size:0.875rem;color:#f1f5f9;font-weight:500;">SAIL-CH-2026-0901</div></div>
+        <div><div style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">Timestamp</div><div id="memo-date" class="mono" style="font-size:0.875rem;color:#f1f5f9;font-weight:500;">2026-08-31 18:43 IST</div></div>
+        <div><div style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">Initiating Officer</div><div id="memo-officer" style="font-size:0.875rem;color:#f1f5f9;font-weight:500;">Devendra Tyagi (CPO)</div></div>
+        <div><div style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">Plants Covered</div><div style="font-size:0.875rem;color:#f1f5f9;font-weight:500;">Rourkela & Bhilai Steel Plants</div></div>
       </div>
-      <div class="p-4 rounded-lg bg-slate-100 border border-slate-300 space-y-2 text-xs">
-        <div class="flex justify-between items-center"><span class="font-bold text-slate-900 uppercase">AI Recommendation:</span><span id="memo-decision-badge" class="px-2.5 py-0.5 rounded font-black bg-emerald-600 text-white">WAIT TO BOOK</span></div>
-        <p id="memo-rationale" class="text-slate-700 leading-relaxed"></p>
+
+      <div style="padding:14px 16px;background:#06090f;border-radius:8px;border:1px solid #1a2332;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-size:10px;color:#64748b;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">AI Recommendation</span><span id="memo-decision-badge" class="badge badge-teal" style="font-size:11px;">WAIT TO BOOK</span></div>
+        <p id="memo-rationale" style="font-size:0.8125rem;color:#94a3b8;line-height:1.6;"></p>
       </div>
-      <div class="text-xs space-y-1">
-        <div class="flex justify-between py-1 border-b border-slate-200"><span class="text-slate-600">Cargo & Parcel:</span><span id="memo-cargo" class="font-bold">75,000 MT Hard Coking Coal</span></div>
-        <div class="flex justify-between py-1 border-b border-slate-200"><span class="text-slate-600">Recommended Vessel:</span><span id="memo-vessel" class="font-bold">Kamsarmax (Arrival Draft 13.95m / Limit 14.5m)</span></div>
-        <div class="flex justify-between py-1 border-b border-slate-200"><span class="text-slate-600">Current Spot Rate:</span><span id="memo-spot-rate" class="font-mono font-bold">$14.20 / MT</span></div>
-        <div class="flex justify-between py-1 border-b border-slate-200"><span class="text-slate-600">Target Booking Rate:</span><span id="memo-target-rate" class="font-mono font-bold text-emerald-700">$12.80 / MT</span></div>
-        <div class="flex justify-between py-1.5 font-bold bg-emerald-50 px-2 rounded"><span class="text-emerald-900">Projected Net Cost Savings:</span><span id="memo-savings" class="text-emerald-700 font-mono text-sm">$105,000 USD</span></div>
+
+      <div style="display:flex;flex-direction:column;gap:0;margin-bottom:20px;border:1px solid #1a2332;border-radius:8px;overflow:hidden;">
+        <div class="data-row" style="padding:10px 16px;"><span style="font-size:0.8125rem;color:#64748b;">Cargo & Parcel</span><span id="memo-cargo" style="font-size:0.8125rem;color:#f1f5f9;font-weight:500;">75,000 MT Hard Coking Coal</span></div>
+        <div class="data-row" style="padding:10px 16px;"><span style="font-size:0.8125rem;color:#64748b;">Recommended Vessel</span><span id="memo-vessel" class="mono" style="font-size:0.8125rem;color:#f1f5f9;font-weight:500;">Kamsarmax</span></div>
+        <div class="data-row" style="padding:10px 16px;"><span style="font-size:0.8125rem;color:#64748b;">Current Spot Rate</span><span id="memo-spot-rate" class="mono" style="font-size:0.8125rem;color:#f1f5f9;font-weight:500;">$14.20 / MT</span></div>
+        <div class="data-row" style="padding:10px 16px;"><span style="font-size:0.8125rem;color:#64748b;">Target Booking Rate</span><span id="memo-target-rate" class="mono" style="font-size:0.875rem;color:#0d9488;font-weight:600;">$12.80 / MT</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#06090f;"><span style="font-size:0.875rem;font-weight:600;color:#f1f5f9;">Projected Net Savings</span><span id="memo-savings" class="mono" style="font-size:1.125rem;font-weight:700;color:#0d9488;">$105,000</span></div>
       </div>
-      <div class="pt-6 border-t border-slate-300 flex justify-between text-xs text-slate-500">
-        <div><span class="block">Prepared By:</span><span class="font-semibold text-slate-800">Chartering Cell, SAIL</span></div>
-        <div class="text-right"><span class="block">Approved By:</span><span class="font-semibold text-slate-800">Ministry of Steel Procurement Board</span></div>
-      </div>
-      <div class="flex justify-end space-x-3 pt-2">
-        <button onclick="window.print()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg cursor-pointer flex items-center space-x-1.5"><i data-lucide="printer" class="w-3.5 h-3.5"></i><span>Print / Save PDF</span></button>
-        <button onclick="closeProcurementMemo()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs rounded-lg cursor-pointer">Close</button>
+
+      <div style="padding-top:16px;border-top:1px solid #1a2332;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:0.6875rem;color:#3a4a5e;">Authorized for submission to Ministry of Steel Procurement Board</div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="window.print()" class="btn-primary" style="font-size:0.75rem;"><i data-lucide="printer" style="width:13px;height:13px;"></i>Print PDF</button>
+          <button onclick="closeProcurementMemo()" class="btn-ghost" style="font-size:0.75rem;">Close</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <footer class="border-t border-slate-800 bg-steel-900/60 py-6 text-center text-xs text-slate-500 mt-auto">
-    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-      <span>Intelligent Freight Forecasting & Vessel Chartering System · SIH26006</span>
-      <span class="text-slate-400">Developed for <b>Ministry of Steel</b> & <b>Steel Authority of India Ltd (SAIL)</b></span>
+  <footer style="border-top:1px solid #0c1117;padding:16px 24px;margin-top:auto;">
+    <div style="max-width:1280px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:0.6875rem;color:#3a4a5e;">FreightIQ · Bulk Charter Intelligence Platform · SIH26006</span>
+      <span style="font-size:0.6875rem;color:#3a4a5e;">Steel Authority of India Limited · Ministry of Steel, Government of India</span>
     </div>
   </footer>
 

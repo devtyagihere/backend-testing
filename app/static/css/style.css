@@ -1,10 +1,17 @@
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #090d16; }
-::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #475569; }
-.nav-link.active { background-color: #0284c7 !important; color: #ffffff !important; }
+/* FreightIQ — Minimal Professional Theme */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #06090f; }
+::-webkit-scrollbar-thumb { background: #1a2332; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #222d3d; }
+
+.nav-link.active { background: rgba(37,99,235,0.10) !important; color: #93c5fd !important; border-color: rgba(37,99,235,0.2) !important; }
+.nav-link:hover:not(.active) { background: #111720 !important; color: #f1f5f9 !important; }
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
 @media print {
-  body * { visibility: hidden; }
-  #modal-memo, #modal-memo * { visibility: visible; }
-  #modal-memo { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: white; }
+  body * { visibility: hidden !important; }
+  #modal-memo { display: flex !important; visibility: visible !important; position: fixed; inset: 0; background: white !important; border: none !important; z-index: 9999; padding: 40px; border-radius: 0; }
+  #modal-memo * { visibility: visible !important; color: #111 !important; background: transparent !important; border-color: #ddd !important; }
+  #modal-memo button { display: none !important; }
 }

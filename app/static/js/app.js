@@ -1,522 +1,400 @@
 
-let forecastChartInstance = null;
-let currentOptimizationData = null;
-let presetScenarios = [];
-let operationalNotifications = [];
-let currentUserProfile = null;
+// FreightIQ — Professional Charter Intelligence Platform
+'use strict';
 
-document.addEventListener("DOMContentLoaded", () => {
-    lucide.createIcons();
-    initSliders();
-    loadPresetScenarios();
-    loadNotifications();
-    switchUserRole("cpo");
-    initPortsHandbook();
-    initOptimizer();
-    
-    // Close dropdowns on outside click
-    document.addEventListener("click", (e) => {
-        if (!e.target.closest("#btn-scenarios-dropdown") && !e.target.closest("#scenarios-menu")) {
-            document.getElementById("scenarios-menu")?.classList.add("hidden");
-        }
-        if (!e.target.closest("#btn-notifications") && !e.target.closest("#notifications-panel")) {
-            document.getElementById("notifications-panel")?.classList.add("hidden");
-        }
-        if (!e.target.closest("#btn-user-profile") && !e.target.closest("#user-menu")) {
-            document.getElementById("user-menu")?.classList.add("hidden");
-        }
-    });
+let chartInstance = null;
+let optimizationData = null;
+let scenarios = [];
+let notifications = [];
+let userProfile = null;
 
-    // Run optimization in background for initial state
-    runOptimization(false);
+// ─── Boot ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  lucide.createIcons();
+  initSliders();
+  initOptimizer();
+  await Promise.all([
+    loadScenarios(),
+    loadNotifications(),
+    switchUserRole('cpo')
+  ]);
+  runOptimization(false);
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('[onclick*="scenarios-menu"]') && !e.target.closest('#scenarios-menu'))
+      document.getElementById('scenarios-menu').style.display = 'none';
+    if (!e.target.closest('[onclick*="notifications-panel"]') && !e.target.closest('#notifications-panel'))
+      document.getElementById('notifications-panel').style.display = 'none';
+    if (!e.target.closest('[onclick*="user-menu"]') && !e.target.closest('#user-menu'))
+      document.getElementById('user-menu').style.display = 'none';
+  });
 });
 
-// Tab Navigation
-function navigateToTab(tabId) {
-    const tabs = ["landing", "optimizer", "market", "backtest", "ports"];
-    tabs.forEach(t => {
-        const viewEl = document.getElementById(`view-${t}`);
-        const navBtn = document.getElementById(`nav-${t}`);
-        if (t === tabId) {
-            viewEl?.classList.remove("hidden");
-            navBtn?.classList.add("active");
-        } else {
-            viewEl?.classList.add("hidden");
-            navBtn?.classList.remove("active");
-        }
-    });
-
-    if (tabId === "backtest") {
-        loadBacktestData();
-    }
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    lucide.createIcons();
+// ─── Navigation ────────────────────────────────────────────────────────────
+function navigateToTab(id) {
+  ['landing','optimizer','market','backtest','ports'].forEach(t => {
+    const v = document.getElementById('view-' + t);
+    const n = document.getElementById('nav-' + t);
+    const isActive = t === id;
+    if (v) v.style.display = isActive ? 'block' : 'none';
+    if (n) { n.classList.toggle('active', isActive); }
+  });
+  if (id === 'backtest') loadBacktestData();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  lucide.createIcons();
 }
 
 function toggleDropdown(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const isHidden = el.classList.contains("hidden");
-    // Hide others
-    ["scenarios-menu", "notifications-panel", "user-menu"].forEach(other => {
-        if (other !== id) document.getElementById(other)?.classList.add("hidden");
+  ['scenarios-menu','notifications-panel','user-menu'].forEach(other => {
+    if (other !== id) document.getElementById(other).style.display = 'none';
+  });
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+// ─── Toast Notifications ───────────────────────────────────────────────────
+function showToast(msg, type = 'info') {
+  const c = document.getElementById('toast-container');
+  const colors = {
+    success: { bg: '#0a1f1c', border: 'rgba(13,148,136,0.4)', text: '#5eead4' },
+    warning: { bg: '#1c1408', border: 'rgba(217,119,6,0.4)', text: '#fbbf24' },
+    error:   { bg: '#1c0a0a', border: 'rgba(220,38,38,0.4)', text: '#fca5a5' },
+    info:    { bg: '#0c1117', border: '#1a2332', text: '#94a3b8' }
+  };
+  const col = colors[type] || colors.info;
+  const toast = document.createElement('div');
+  toast.style.cssText = `pointer-events:auto;display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:7px;border:1px solid ${col.border};background:${col.bg};color:${col.text};font-size:0.8125rem;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.4);opacity:0;transition:opacity 0.2s;font-family:'Inter',sans-serif;`;
+  toast.innerHTML = `<i data-lucide="info" style="width:14px;height:14px;flex-shrink:0;"></i><span>${msg}</span>`;
+  c.appendChild(toast);
+  lucide.createIcons();
+  setTimeout(() => toast.style.opacity = '1', 10);
+  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 200); }, 4000);
+}
+
+// ─── Sliders ───────────────────────────────────────────────────────────────
+function initSliders() {
+  const ts = document.getElementById('inp-tonnage-slider');
+  const td = document.getElementById('tonnage-display');
+  ts?.addEventListener('input', e => { td.textContent = `${parseInt(e.target.value).toLocaleString()} MT`; });
+  const ls = document.getElementById('inp-laycan');
+  const ld = document.getElementById('laycan-display');
+  ls?.addEventListener('input', e => { ld.textContent = `${e.target.value} days`; });
+}
+
+// ─── Scenarios ─────────────────────────────────────────────────────────────
+async function loadScenarios() {
+  try {
+    const res = await fetch('/api/v1/scenarios');
+    scenarios = await res.json();
+    const list = document.getElementById('scenarios-list');
+    list.innerHTML = '';
+    scenarios.forEach(sc => {
+      const btn = document.createElement('button');
+      btn.style.cssText = 'width:100%;text-align:left;padding:8px 10px;border-radius:6px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;gap:2px;transition:background 0.15s;';
+      btn.onmouseenter = () => btn.style.background = '#111720';
+      btn.onmouseleave = () => btn.style.background = 'none';
+      btn.onclick = () => { loadScenario(sc.id); document.getElementById('scenarios-menu').style.display='none'; };
+      btn.innerHTML = `<div style="display:flex;justify-content:space-between;"><span style="font-size:0.8125rem;font-weight:600;color:#f1f5f9;">${sc.title}</span><span style="font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(37,99,235,0.1);color:#93c5fd;border:1px solid rgba(37,99,235,0.15);font-weight:600;">${sc.tag}</span></div><span style="font-size:0.6875rem;color:#64748b;">${sc.subtitle}</span>`;
+      list.appendChild(btn);
     });
-    if (isHidden) el.classList.remove("hidden");
-    else el.classList.add("hidden");
+  } catch(e) { console.warn('Scenarios load failed', e); }
 }
 
-function showToast(message, type = "info") {
-    const container = document.getElementById("toast-container");
-    if (!container) return;
-
-    const toast = document.createElement("div");
-    const bg = type === "success" ? "bg-emerald-950 border-emerald-500/60 text-emerald-300" :
-               type === "warning" ? "bg-amber-950 border-amber-500/60 text-amber-300" :
-               type === "error" ? "bg-rose-950 border-rose-500/60 text-rose-300" :
-               "bg-steel-900 border-slate-700 text-slate-200";
-
-    toast.className = `pointer-events-auto flex items-center space-x-2 px-4 py-3 rounded-xl border ${bg} shadow-2xl text-xs font-semibold transform transition-all duration-300 translate-y-2 opacity-0`;
-    toast.innerHTML = `<i data-lucide="info" class="w-4 h-4 shrink-0"></i><span>${message}</span>`;
-    
-    container.appendChild(toast);
-    lucide.createIcons();
-
-    setTimeout(() => {
-        toast.classList.remove("translate-y-2", "opacity-0");
-    }, 10);
-
-    setTimeout(() => {
-        toast.classList.add("opacity-0", "translate-y-2");
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
+function loadScenario(id) {
+  const sc = scenarios.find(s => s.id === id);
+  if (!sc) return;
+  const r = sc.request;
+  document.getElementById('inp-commodity').value = r.commodity;
+  document.getElementById('inp-tonnage-slider').value = r.parcel_tonnage_mt;
+  document.getElementById('tonnage-display').textContent = `${r.parcel_tonnage_mt.toLocaleString()} MT`;
+  document.getElementById('inp-origin').value = r.origin_port_id;
+  document.getElementById('inp-dest').value = r.dest_port_id;
+  document.getElementById('inp-laycan').value = r.laycan_days_ahead;
+  document.getElementById('laycan-display').textContent = `${r.laycan_days_ahead} days`;
+  document.getElementById('inp-holding-cost').value = r.holding_cost_usd_per_day;
+  document.getElementById('inp-risk-strategy').value = r.risk_tolerance;
+  navigateToTab('optimizer');
+  runOptimization(true);
+  showToast(`Scenario loaded: ${sc.title}`, 'info');
 }
 
-// Presets & Scenarios Management
-async function loadPresetScenarios() {
-    try {
-        const res = await fetch("/api/v1/scenarios");
-        presetScenarios = await res.json();
-        const listEl = document.getElementById("scenarios-list");
-        if (!listEl) return;
-        listEl.innerHTML = "";
-
-        presetScenarios.forEach(sc => {
-            const btn = document.createElement("button");
-            btn.className = "w-full text-left p-2 rounded-lg hover:bg-steel-800 flex flex-col space-y-0.5 transition-colors cursor-pointer";
-            btn.onclick = () => {
-                loadScenario(sc.id);
-                toggleDropdown("scenarios-menu");
-            };
-            btn.innerHTML = `
-                <div class="flex items-center justify-between">
-                    <span class="font-bold text-xs text-white">${sc.title}</span>
-                    <span class="text-[9px] px-1.5 py-0.2 rounded font-black bg-${sc.badge_color}-500/20 text-${sc.badge_color}-300">${sc.tag}</span>
-                </div>
-                <span class="text-[10px] text-slate-400 leading-tight">${sc.subtitle}</span>
-            `;
-            listEl.appendChild(btn);
-        });
-    } catch (err) {
-        console.error("Failed loading scenarios:", err);
-    }
-}
-
-function loadScenario(scenarioId) {
-    const sc = presetScenarios.find(s => s.id === scenarioId);
-    if (!sc) return;
-
-    const r = sc.request;
-    document.getElementById("inp-commodity").value = r.commodity;
-    document.getElementById("inp-tonnage-slider").value = r.parcel_tonnage_mt;
-    document.getElementById("tonnage-display").textContent = `${r.parcel_tonnage_mt.toLocaleString()} MT`;
-    document.getElementById("inp-origin").value = r.origin_port_id;
-    document.getElementById("inp-dest").value = r.dest_port_id;
-    document.getElementById("inp-laycan").value = r.laycan_days_ahead;
-    document.getElementById("laycan-display").textContent = `${r.laycan_days_ahead} Days Ahead`;
-    document.getElementById("inp-holding-cost").value = r.holding_cost_usd_per_day;
-    document.getElementById("inp-risk-strategy").value = r.risk_tolerance;
-
-    navigateToTab("optimizer");
-    runOptimization(true);
-    showToast(`Loaded Scenario: ${sc.title}`, "success");
-}
-
-// Notifications
+// ─── Notifications ─────────────────────────────────────────────────────────
 async function loadNotifications() {
-    try {
-        const res = await fetch("/api/v1/notifications");
-        operationalNotifications = await res.json();
-        const listEl = document.getElementById("notifications-list");
-        if (!listEl) return;
-        listEl.innerHTML = "";
-
-        operationalNotifications.forEach(n => {
-            const item = document.createElement("div");
-            item.className = "p-2 hover:bg-steel-850 rounded-lg text-xs space-y-1";
-            const icon = n.type === "alert" ? "alert-circle" : n.type === "warning" ? "alert-triangle" : "info";
-            const iconColor = n.type === "alert" ? "text-amber-400" : n.type === "warning" ? "text-rose-400" : "text-brand-400";
-            item.innerHTML = `
-                <div class="flex items-center justify-between">
-                    <span class="font-bold text-white flex items-center space-x-1.5">
-                        <i data-lucide="${icon}" class="w-3 h-3 ${iconColor}"></i>
-                        <span>${n.title}</span>
-                    </span>
-                    <span class="text-[10px] text-slate-500">${n.time}</span>
-                </div>
-                <p class="text-[11px] text-slate-400 leading-tight">${n.message}</p>
-            `;
-            listEl.appendChild(item);
-        });
-        lucide.createIcons();
-    } catch (err) {
-        console.error("Notifications fetch error:", err);
-    }
+  try {
+    const res = await fetch('/api/v1/notifications');
+    notifications = await res.json();
+    const list = document.getElementById('notifications-list');
+    list.innerHTML = '';
+    notifications.forEach(n => {
+      const typeColor = { alert: '#fbbf24', warning: '#fca5a5', info: '#93c5fd' };
+      const item = document.createElement('div');
+      item.style.cssText = 'padding:8px;border-radius:6px;cursor:pointer;transition:background 0.15s;';
+      item.onmouseenter = () => item.style.background = '#111720';
+      item.onmouseleave = () => item.style.background = 'transparent';
+      item.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><span style="font-size:0.8125rem;font-weight:600;color:${typeColor[n.type] || '#93c5fd'};">${n.title}</span><span style="font-size:10px;color:#3a4a5e;font-family:'JetBrains Mono',monospace;">${n.time}</span></div><p style="font-size:0.75rem;color:#64748b;line-height:1.5;margin:0;">${n.message}</p>`;
+      list.appendChild(item);
+    });
+    lucide.createIcons();
+  } catch(e) { console.warn('Notifications load failed', e); }
 }
 
 function markAllNotificationsRead() {
-    const badge = document.getElementById("notif-badge");
-    if (badge) badge.style.display = "none";
-    showToast("All operational notifications marked as read", "info");
+  document.getElementById('notif-badge').style.display = 'none';
+  document.getElementById('notifications-panel').style.display = 'none';
+  showToast('All signals marked as read', 'info');
 }
 
-// Role Switcher
+// ─── Role Switcher ─────────────────────────────────────────────────────────
 async function switchUserRole(roleKey) {
-    try {
-        const res = await fetch(`/api/v1/profile?role=${roleKey}`);
-        currentUserProfile = await res.json();
-        
-        document.getElementById("user-avatar").textContent = currentUserProfile.avatar_badge;
-        document.getElementById("user-display-name").textContent = currentUserProfile.name;
-        document.getElementById("user-role-name").textContent = currentUserProfile.title.split(" ")[0] + ", SAIL";
-        document.getElementById("menu-user-name").textContent = currentUserProfile.name;
-        document.getElementById("menu-user-title").textContent = currentUserProfile.title;
-        
-        toggleDropdown("user-menu");
-        showToast(`Switched active view to: ${currentUserProfile.role}`, "info");
-    } catch (err) {
-        console.error("Role switch error:", err);
-    }
+  try {
+    const res = await fetch(`/api/v1/profile?role=${roleKey}`);
+    userProfile = await res.json();
+    document.getElementById('user-avatar').textContent = userProfile.avatar_badge;
+    document.getElementById('user-display-name').textContent = userProfile.name;
+    document.getElementById('user-role-name').textContent = userProfile.title.split(' ').slice(0,2).join(' ');
+    document.getElementById('menu-user-name').textContent = userProfile.name;
+    document.getElementById('menu-user-title').textContent = userProfile.title;
+    document.getElementById('user-menu').style.display = 'none';
+    showToast(`View: ${userProfile.role}`, 'info');
+  } catch(e) { console.warn('Role switch failed', e); }
 }
 
-// Sliders initialization
-function initSliders() {
-    const tonnageSlider = document.getElementById("inp-tonnage-slider");
-    const tonnageDisplay = document.getElementById("tonnage-display");
-    tonnageSlider?.addEventListener("input", (e) => {
-        const val = parseInt(e.target.value);
-        tonnageDisplay.textContent = `${val.toLocaleString()} MT`;
-    });
-
-    const laycanSlider = document.getElementById("inp-laycan");
-    const laycanDisplay = document.getElementById("laycan-display");
-    laycanSlider?.addEventListener("input", (e) => {
-        laycanDisplay.textContent = `${e.target.value} Days Ahead`;
-    });
-}
-
-// Optimizer Logic
+// ─── Optimizer ─────────────────────────────────────────────────────────────
 function initOptimizer() {
-    const form = document.getElementById("optimizer-form");
-    form?.addEventListener("submit", (e) => {
-        e.preventDefault();
-        runOptimization(true);
-    });
+  document.getElementById('optimizer-form')?.addEventListener('submit', e => { e.preventDefault(); runOptimization(true); });
 }
 
-async function runOptimization(showToastNotification = false) {
-    const tonnage = parseFloat(document.getElementById("inp-tonnage-slider").value);
-    const commodity = document.getElementById("inp-commodity").value;
-    const origin = document.getElementById("inp-origin").value;
-    const dest = document.getElementById("inp-dest").value;
-    const laycan = parseInt(document.getElementById("inp-laycan").value);
-    const holdingCost = parseFloat(document.getElementById("inp-holding-cost").value || 2500.0);
-    const risk = document.getElementById("inp-risk-strategy").value;
-
-    const payload = {
-        parcel_tonnage_mt: tonnage,
-        commodity: commodity,
-        origin_port_id: origin,
-        dest_port_id: dest,
-        laycan_days_ahead: laycan,
-        risk_tolerance: risk,
-        holding_cost_usd_per_day: holdingCost
-    };
-
-    try {
-        const response = await fetch("/api/v1/optimize", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-        
-        if (!response.ok) throw new Error(`API error: ${response.statusText}`);
-
-        const data = await response.json();
-        currentOptimizationData = data;
-        renderOptimizationResults(data);
-        if (showToastNotification) {
-            showToast(`Optimization complete: ${data.recommendation} call generated`, "success");
-        }
-    } catch (err) {
-        console.error("Optimization failed:", err);
-        showToast("Optimization calculation failed", "error");
-    }
+async function runOptimization(notify = false) {
+  const payload = {
+    parcel_tonnage_mt: parseFloat(document.getElementById('inp-tonnage-slider').value),
+    commodity: document.getElementById('inp-commodity').value,
+    origin_port_id: document.getElementById('inp-origin').value,
+    dest_port_id: document.getElementById('inp-dest').value,
+    laycan_days_ahead: parseInt(document.getElementById('inp-laycan').value),
+    risk_tolerance: document.getElementById('inp-risk-strategy').value,
+    holding_cost_usd_per_day: parseFloat(document.getElementById('inp-holding-cost').value || 2500)
+  };
+  try {
+    const res = await fetch('/api/v1/optimize', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    if (!res.ok) throw new Error(res.statusText);
+    optimizationData = await res.json();
+    renderResults(optimizationData);
+    if (notify) showToast(`Decision: ${optimizationData.recommendation}`, 'success');
+  } catch(e) {
+    console.error('Optimization error', e);
+    if (notify) showToast('Optimization failed', 'error');
+  }
 }
 
-function renderOptimizationResults(data) {
-    const isWait = data.recommendation === "WAIT";
-    const banner = document.getElementById("decision-banner");
-    const tag = document.getElementById("decision-action-tag");
-    const headline = document.getElementById("decision-headline");
-    const savingsUsd = document.getElementById("decision-savings-usd");
-    const savingsPct = document.getElementById("decision-savings-pct");
-    const summary = document.getElementById("decision-summary-text");
-    const conf = document.getElementById("decision-confidence");
-    const iconBadge = document.getElementById("decision-icon-badge");
+function renderResults(d) {
+  const isWait = d.recommendation === 'WAIT';
+  const banner = document.getElementById('decision-banner');
+  const tag    = document.getElementById('decision-action-tag');
+  const head   = document.getElementById('decision-headline');
+  const savings= document.getElementById('decision-savings-usd');
+  const pct    = document.getElementById('decision-savings-pct');
+  const summ   = document.getElementById('decision-summary-text');
+  const conf   = document.getElementById('decision-confidence');
+  const icon   = document.getElementById('decision-icon-badge');
 
-    if (isWait) {
-        banner.className = "bg-gradient-to-r from-emerald-950/80 via-steel-900 to-steel-900 border border-emerald-500/40 rounded-2xl p-5 shadow-xl";
-        tag.className = "px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-500 text-slate-950 tracking-wider";
-        tag.textContent = "WAIT TO BOOK";
-        headline.textContent = `Recommended Booking: Day ${data.optimal_booking_day_offset} (${data.optimal_booking_date})`;
-        savingsUsd.className = "text-xl font-black text-emerald-400";
-        savingsUsd.textContent = `$${data.expected_savings_usd.toLocaleString()} USD`;
-        savingsPct.textContent = `(${data.expected_savings_pct.toFixed(1)}% freight reduction)`;
-        conf.className = "text-xs text-emerald-400 font-semibold";
-        conf.textContent = `Confidence: ${data.confidence_pct}%`;
-        iconBadge.className = "w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center text-emerald-400";
-        iconBadge.innerHTML = '<i data-lucide="clock" class="w-6 h-6"></i>';
-    } else {
-        banner.className = "bg-gradient-to-r from-sky-950/80 via-steel-900 to-steel-900 border border-sky-500/40 rounded-2xl p-5 shadow-xl";
-        tag.className = "px-2.5 py-0.5 rounded-full text-xs font-black bg-sky-400 text-slate-950 tracking-wider";
-        tag.textContent = "BOOK NOW";
-        headline.textContent = `Lock in Spot Charter Today ($${data.current_spot_rate_usd_t.toFixed(2)}/MT)`;
-        savingsUsd.className = "text-xl font-black text-sky-400";
-        savingsUsd.textContent = "Risk Protected";
-        savingsPct.textContent = "(Upward pressure mitigated)";
-        conf.className = "text-xs text-sky-400 font-semibold";
-        conf.textContent = `Confidence: ${data.confidence_pct}%`;
-        iconBadge.className = "w-12 h-12 rounded-xl bg-sky-500/20 border border-sky-500/50 flex items-center justify-center text-sky-400";
-        iconBadge.innerHTML = '<i data-lucide="check-circle-2" class="w-6 h-6"></i>';
-    }
-    summary.textContent = data.decision_summary;
+  if (isWait) {
+    banner.style.borderColor = 'rgba(13,148,136,0.3)';
+    tag.className = 'badge badge-teal';
+    tag.textContent = 'WAIT TO BOOK';
+    head.textContent = `Optimal booking: Day ${d.optimal_booking_day_offset} — ${d.optimal_booking_date}`;
+    savings.style.color = '#0d9488';
+    savings.textContent = `$${d.expected_savings_usd.toLocaleString()}`;
+    pct.textContent = `${d.expected_savings_pct.toFixed(1)}% freight reduction`;
+    icon.style.background = 'rgba(13,148,136,0.12)';
+    icon.style.borderColor = 'rgba(13,148,136,0.25)';
+    icon.style.color = '#0d9488';
+    icon.innerHTML = '<i data-lucide="clock" style="width:20px;height:20px;"></i>';
+  } else {
+    banner.style.borderColor = 'rgba(37,99,235,0.3)';
+    tag.className = 'badge badge-blue';
+    tag.textContent = 'BOOK NOW';
+    head.textContent = `Spot lock-in recommended — $${d.current_spot_rate_usd_t.toFixed(2)}/MT`;
+    savings.style.color = '#93c5fd';
+    savings.textContent = 'Risk Protected';
+    pct.textContent = 'Upward movement likely';
+    icon.style.background = 'rgba(37,99,235,0.12)';
+    icon.style.borderColor = 'rgba(37,99,235,0.25)';
+    icon.style.color = '#93c5fd';
+    icon.innerHTML = '<i data-lucide="check-circle" style="width:20px;height:20px;"></i>';
+  }
+  conf.textContent = `Confidence ${d.confidence_pct}%`;
+  summ.textContent = d.decision_summary;
+  document.getElementById('recommended-vessel-badge').textContent = d.recommended_vessel_class;
 
-    document.getElementById("recommended-vessel-badge").textContent = data.recommended_vessel_class;
+  // Vessel list
+  const vl = document.getElementById('vessel-list');
+  vl.innerHTML = '';
+  d.all_vessel_matches.forEach(v => {
+    const isRec = v.vessel_class === d.recommended_vessel_class;
+    const el = document.createElement('div');
+    el.style.cssText = `padding:8px 10px;border-radius:6px;border:1px solid ${isRec ? 'rgba(37,99,235,0.3)' : v.is_suitable ? '#1a2332' : 'rgba(220,38,38,0.2)'};background:${isRec ? 'rgba(37,99,235,0.06)' : '#06090f'};`;
+    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:0.8125rem;font-weight:600;color:#f1f5f9;">${v.vessel_class}</span>
+        ${isRec ? '<span class="badge badge-blue" style="font-size:9px;">OPTIMAL</span>' : ''}
+        <span class="badge ${v.is_suitable ? 'badge-teal' : 'badge-red'}" style="font-size:9px;">${v.is_suitable ? 'PASS' : 'RESTRICTED'}</span>
+      </div>
+      <span style="font-size:0.6875rem;color:#64748b;font-family:'JetBrains Mono',monospace;">Draft ${v.estimated_arrival_draft_m}m / ${v.port_max_draft_m}m</span>
+    </div>
+    ${v.disqualification_reasons?.length ? `<div style="font-size:0.6875rem;color:#fca5a5;margin-top:4px;">${v.disqualification_reasons.join('; ')}</div>` : ''}`;
+    vl.appendChild(el);
+  });
 
-    const vesselList = document.getElementById("vessel-list");
-    vesselList.innerHTML = "";
-    data.all_vessel_matches.forEach(v => {
-        const row = document.createElement("div");
-        row.className = `p-2 rounded-lg border ${v.is_suitable ? (v.vessel_class === data.recommended_vessel_class ? 'bg-brand-950/40 border-brand-500/50' : 'bg-steel-850 border-slate-800') : 'bg-rose-950/20 border-rose-900/40 opacity-70'} flex flex-col space-y-1`;
-        row.innerHTML = `
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                    <span class="font-bold text-white">${v.vessel_class}</span>
-                    <span class="text-[9px] px-1.5 py-0.5 rounded ${v.is_suitable ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'} font-semibold">
-                        ${v.is_suitable ? 'COMPATIBLE' : 'RESTRICTED'}
-                    </span>
-                    ${v.vessel_class === data.recommended_vessel_class ? '<span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1 rounded font-bold">OPTIMAL FIT</span>' : ''}
-                </div>
-                <span class="text-slate-400 text-[10px]">Arrival Draft: <b class="text-slate-200">${v.estimated_arrival_draft_m}m</b> (Max: ${v.port_max_draft_m}m)</span>
-            </div>
-            ${v.disqualification_reasons.length > 0 ? `<p class="text-[10px] text-rose-400">&bull; ${v.disqualification_reasons.join(', ')}</p>` : ''}
-            ${v.transshipment_recommendation ? `<p class="text-[10px] text-amber-300">&bull; ${v.transshipment_recommendation}</p>` : ''}
-        `;
-        vesselList.appendChild(row);
-    });
+  // Economics
+  const eco = d.voyage_breakdown;
+  document.getElementById('eco-duration').textContent = `${eco.steaming_days} + ${(eco.loading_days+eco.discharge_days+eco.port_waiting_days).toFixed(1)} days`;
+  document.getElementById('eco-bunker').textContent = `${eco.bunker_vlsfo_mt.toLocaleString()} MT ($${eco.bunker_fuel_cost_usd.toLocaleString()})`;
+  document.getElementById('eco-charter').textContent = `$${eco.vessel_charter_cost_usd.toLocaleString()}`;
+  document.getElementById('eco-dues').textContent = `$${(eco.port_dues_usd+eco.canal_dues_usd+eco.lighterage_cost_usd).toLocaleString()}`;
+  document.getElementById('eco-freight-rate').textContent = `$${d.current_spot_rate_usd_t.toFixed(2)}`;
 
-    const eco = data.voyage_breakdown;
-    document.getElementById("eco-duration").textContent = `${eco.steaming_days} Sea + ${(eco.loading_days + eco.discharge_days + eco.port_waiting_days).toFixed(1)} Port Days`;
-    document.getElementById("eco-bunker").textContent = `${eco.bunker_vlsfo_mt.toLocaleString()} MT ($${eco.bunker_fuel_cost_usd.toLocaleString()})`;
-    document.getElementById("eco-charter").textContent = `$${eco.vessel_charter_cost_usd.toLocaleString()}`;
-    document.getElementById("eco-dues").textContent = `$${(eco.port_dues_usd + eco.canal_dues_usd + eco.lighterage_cost_usd).toLocaleString()}`;
-    document.getElementById("eco-freight-rate").textContent = `$${data.current_spot_rate_usd_t.toFixed(2)} / MT`;
+  const monsoon = d.risk_assessment?.monsoon_impact_flag;
+  const rm = document.getElementById('risk-monsoon');
+  rm.innerHTML = monsoon ? '<i data-lucide="alert-triangle" style="width:12px;height:12px;color:#d97706;"></i>Monsoon Active' : '<i data-lucide="cloud-sun" style="width:12px;height:12px;color:#0d9488;"></i>Monsoon: Clear';
+  rm.style.color = monsoon ? '#fbbf24' : '#94a3b8';
 
-    const r = data.risk_assessment;
-    const monsoonEl = document.getElementById("risk-monsoon");
-    if (r.monsoon_impact_flag) {
-        monsoonEl.className = "p-1.5 rounded bg-amber-950/40 text-amber-300 border border-amber-500/30 flex items-center space-x-1.5";
-        monsoonEl.innerHTML = '<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-400"></i><span>Monsoon Active</span>';
-    } else {
-        monsoonEl.className = "p-1.5 rounded bg-slate-800 text-slate-300 flex items-center space-x-1.5";
-        monsoonEl.innerHTML = '<i data-lucide="cloud-sun" class="w-3.5 h-3.5 text-emerald-400"></i><span>Monsoon: Clear</span>';
-    }
-
-    renderForecastChart(data);
-    lucide.createIcons();
+  renderChart(d);
+  lucide.createIcons();
 }
 
-function renderForecastChart(data) {
-    const ctx = document.getElementById("forecastChart")?.getContext("2d");
-    if (!ctx) return;
-    
-    const labels = ["Spot Today"];
-    const forecastSeries = [data.current_spot_rate_usd_t];
-    const upper80Series = [data.current_spot_rate_usd_t];
-    const lower80Series = [data.current_spot_rate_usd_t];
-
-    data.forecast_curve.forEach((pt) => {
-        labels.push(`Day ${pt.day_offset}`);
-        forecastSeries.push(pt.predicted_rate_usd_t);
-        upper80Series.push(pt.upper_80_pct);
-        lower80Series.push(pt.lower_80_pct);
-    });
-
-    if (forecastChartInstance) {
-        forecastChartInstance.destroy();
+function renderChart(d) {
+  const ctx = document.getElementById('forecastChart')?.getContext('2d');
+  if (!ctx) return;
+  const labels = ['Spot'];
+  const fore = [d.current_spot_rate_usd_t];
+  const up80 = [d.current_spot_rate_usd_t];
+  const lo80 = [d.current_spot_rate_usd_t];
+  d.forecast_curve.forEach(pt => {
+    labels.push(`D${pt.day_offset}`);
+    fore.push(pt.predicted_rate_usd_t);
+    up80.push(pt.upper_80_pct);
+    lo80.push(pt.lower_80_pct);
+  });
+  if (chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Forecast', data: fore, borderColor: '#d97706', borderWidth: 2, pointRadius: fore.map((_,i) => i === d.optimal_booking_day_offset ? 5 : 2), pointBackgroundColor: fore.map((_,i) => i === d.optimal_booking_day_offset ? '#0d9488' : '#d97706'), tension: 0.3, fill: false, z: 5 },
+        { label: 'Upper 80%', data: up80, borderColor: 'rgba(217,119,6,0.15)', borderWidth: 1, pointRadius: 0, fill: '+1', backgroundColor: 'rgba(217,119,6,0.06)', tension: 0.3 },
+        { label: 'Lower 80%', data: lo80, borderColor: 'rgba(217,119,6,0.15)', borderWidth: 1, pointRadius: 0, fill: false, tension: 0.3 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: '#0c1117', titleColor: '#f1f5f9', bodyColor: '#94a3b8', borderColor: '#1a2332', borderWidth: 1, padding: 10, callbacks: { label: c => `${c.dataset.label}: $${c.raw?.toFixed(2)}` } }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(26,35,50,0.8)' }, ticks: { color: '#3a4a5e', font: { size: 10, family: 'JetBrains Mono' } } },
+        y: { grid: { color: 'rgba(26,35,50,0.8)' }, ticks: { color: '#3a4a5e', font: { size: 10, family: 'JetBrains Mono' }, callback: v => '$' + v } }
+      }
     }
-
-    forecastChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Predicted Rate ($/MT)',
-                    data: forecastSeries,
-                    borderColor: '#f59e0b',
-                    borderWidth: 2.5,
-                    pointBackgroundColor: (context) => context.dataIndex === data.optimal_booking_day_offset ? '#10b981' : '#f59e0b',
-                    pointRadius: (context) => context.dataIndex === data.optimal_booking_day_offset ? 6 : 2,
-                    tension: 0.25,
-                    fill: false,
-                    zIndex: 10
-                },
-                {
-                    label: 'Upper 80% CI',
-                    data: upper80Series,
-                    borderColor: 'rgba(245, 158, 11, 0.15)',
-                    borderWidth: 1,
-                    pointRadius: 0,
-                    fill: '+1',
-                    backgroundColor: 'rgba(245, 158, 11, 0.08)',
-                    tension: 0.25
-                },
-                {
-                    label: 'Lower 80% CI',
-                    data: lower80Series,
-                    borderColor: 'rgba(245, 158, 11, 0.15)',
-                    borderWidth: 1,
-                    pointRadius: 0,
-                    fill: false,
-                    tension: 0.25
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { intersect: false, mode: 'index' },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#1e293b',
-                    titleColor: '#ffffff',
-                    bodyColor: '#cbd5e1',
-                    borderColor: '#334155',
-                    borderWidth: 1,
-                    callbacks: {
-                        label: (c) => `${c.dataset.label}: $${c.raw?.toFixed(2) || 'N/A'}`
-                    }
-                }
-            },
-            scales: {
-                x: { grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
-                y: { grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#94a3b8', font: { size: 10 }, callback: (val) => `$${val}` } }
-            }
-        }
-    });
+  });
 }
 
-// Backtest Data
+// ─── Backtest ──────────────────────────────────────────────────────────────
 async function loadBacktestData() {
-    try {
-        const response = await fetch("/api/v1/backtest?period_days=365&origin_port_id=AUHPT&dest_port_id=INPRT&parcel_size_mt=75000", {
-            method: "POST"
-        });
-        const data = await response.json();
-        
-        document.getElementById("bt-spend-naive").textContent = `$${data.total_freight_spend_naive_usd.toLocaleString()}`;
-        document.getElementById("bt-spend-model").textContent = `$${data.total_freight_spend_model_usd.toLocaleString()}`;
-        document.getElementById("bt-total-savings").textContent = `$${data.total_savings_usd.toLocaleString()}`;
-        document.getElementById("bt-savings-pct").textContent = `${data.savings_percentage.toFixed(2)}% net reduction`;
-        document.getElementById("bt-win-rate").textContent = `${data.profitable_decisions_pct.toFixed(1)}%`;
+  try {
+    const res = await fetch('/api/v1/backtest?period_days=365&origin_port_id=AUHPT&dest_port_id=INPRT&parcel_size_mt=75000', { method: 'POST' });
+    const data = await res.json();
+    document.getElementById('bt-spend-naive').textContent = `$${data.total_freight_spend_naive_usd.toLocaleString()}`;
+    document.getElementById('bt-spend-model').textContent = `$${data.total_freight_spend_model_usd.toLocaleString()}`;
+    document.getElementById('bt-total-savings').textContent = `$${data.total_savings_usd.toLocaleString()}`;
+    document.getElementById('bt-savings-pct').textContent = `${data.savings_percentage.toFixed(2)}% net reduction`;
+    document.getElementById('bt-win-rate').textContent = `${data.profitable_decisions_pct.toFixed(1)}%`;
 
-        const tableBody = document.getElementById("backtest-table-body");
-        tableBody.innerHTML = "";
-        data.trades.forEach(t => {
-            const tr = document.createElement("tr");
-            tr.className = "hover:bg-steel-850/50";
-            tr.innerHTML = `
-                <td class="py-2.5 px-3 font-semibold text-slate-400">${t.trade_id}</td>
-                <td class="py-2.5 px-3 text-slate-200">${t.date}</td>
-                <td class="py-2.5 px-3 text-slate-300">${t.route} (${t.vessel_class})</td>
-                <td class="py-2.5 px-3 font-mono">$${t.spot_rate_usd_t.toFixed(2)}</td>
-                <td class="py-2.5 px-3"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${t.model_action === 'WAIT' ? 'bg-amber-500/20 text-amber-300' : 'bg-sky-500/20 text-sky-300'}">${t.model_action}</span></td>
-                <td class="py-2.5 px-3 font-mono text-emerald-400 font-bold">$${t.actual_booked_rate_usd_t.toFixed(2)}</td>
-                <td class="py-2.5 px-3 font-mono font-semibold ${t.savings_usd >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${t.savings_usd >= 0 ? '+' : ''}$${t.savings_usd.toLocaleString()}</td>
-                <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.was_profitable ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300'}">${t.was_profitable ? 'PROFIT' : 'NEUTRAL'}</span></td>
-            `;
-            tableBody.appendChild(tr);
-        });
-        showToast("Historical Backtest simulation synchronized", "info");
-    } catch (err) {
-        console.error("Backtest load error:", err);
-    }
+    const tbody = document.getElementById('backtest-table-body');
+    tbody.innerHTML = '';
+    data.trades.forEach(t => {
+      const pos = t.savings_usd >= 0;
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid #0c1117';
+      tr.onmouseenter = () => tr.style.background = '#0c1117';
+      tr.onmouseleave = () => tr.style.background = 'transparent';
+      tr.innerHTML = `
+        <td style="padding:10px 20px;font-size:0.8125rem;color:#3a4a5e;font-family:'JetBrains Mono',monospace;">${t.trade_id}</td>
+        <td style="padding:10px 14px;font-size:0.8125rem;color:#94a3b8;">${t.date}</td>
+        <td style="padding:10px 14px;font-size:0.8125rem;color:#94a3b8;">${t.route} · ${t.vessel_class}</td>
+        <td style="padding:10px 14px;text-align:right;font-size:0.8125rem;font-family:'JetBrains Mono',monospace;color:#f1f5f9;">$${t.spot_rate_usd_t.toFixed(2)}</td>
+        <td style="padding:10px 14px;text-align:center;"><span class="badge ${t.model_action === 'WAIT' ? 'badge-amber' : 'badge-blue'}" style="font-size:9px;">${t.model_action}</span></td>
+        <td style="padding:10px 14px;text-align:right;font-size:0.8125rem;font-family:'JetBrains Mono',monospace;color:#0d9488;font-weight:600;">$${t.actual_booked_rate_usd_t.toFixed(2)}</td>
+        <td style="padding:10px 14px;text-align:right;font-size:0.8125rem;font-family:'JetBrains Mono',monospace;color:${pos ? '#0d9488' : '#fca5a5'};font-weight:600;">${pos ? '+' : ''}$${t.savings_usd.toLocaleString()}</td>
+        <td style="padding:10px 20px;text-align:center;"><span class="badge ${t.was_profitable ? 'badge-teal' : 'badge-slate'}" style="font-size:9px;">${t.was_profitable ? 'PROFIT' : 'NEUTRAL'}</span></td>`;
+      tbody.appendChild(tr);
+    });
+    showToast('Backtest simulation synchronized', 'info');
+  } catch(e) { console.error('Backtest error', e); }
 }
 
-// Ports Registry
+// ─── Ports Registry ────────────────────────────────────────────────────────
 async function initPortsHandbook() {
-    try {
-        const response = await fetch("/api/v1/ports/indian");
-        const ports = await response.json();
-        const tableBody = document.getElementById("ports-table-body");
-        if (!tableBody) return;
-        tableBody.innerHTML = "";
-        ports.forEach(p => {
-            const tr = document.createElement("tr");
-            tr.className = "hover:bg-steel-850/50";
-            tr.innerHTML = `
-                <td class="py-3 px-3 font-bold text-white">${p.name} <span class="text-[10px] text-slate-400 block">${p.state_or_country}</span></td>
-                <td class="py-3 px-3 font-semibold text-amber-400">${p.max_draft_m} m</td>
-                <td class="py-3 px-3 text-slate-300">${p.max_loa_m} m</td>
-                <td class="py-3 px-3 text-slate-300">${p.max_beam_m} m</td>
-                <td class="py-3 px-3 font-semibold text-brand-300">${p.allowed_vessel_classes[p.allowed_vessel_classes.length - 1]}</td>
-                <td class="py-3 px-3 text-slate-200">${p.handling_rate_tpd.toLocaleString()} TPD</td>
-                <td class="py-3 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.lighterage_required ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}">${p.lighterage_required ? 'YES (Sandheads)' : 'NO (Direct)'}</span></td>
-                <td class="py-3 px-3 text-slate-400 text-[11px]">${p.notes || 'Direct Rail link'}</td>
-            `;
-            tableBody.appendChild(tr);
-        });
-    } catch (err) {
-        console.error("Ports handbook error:", err);
-    }
+  try {
+    const res = await fetch('/api/v1/ports/indian');
+    const ports = await res.json();
+    const tbody = document.getElementById('ports-table-body');
+    tbody.innerHTML = '';
+    ports.forEach(p => {
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid #0c1117';
+      tr.onmouseenter = () => tr.style.background = '#0c1117';
+      tr.onmouseleave = () => tr.style.background = 'transparent';
+      tr.innerHTML = `
+        <td style="padding:12px 20px;"><div style="font-size:0.8125rem;font-weight:500;color:#f1f5f9;">${p.name}</div><div style="font-size:0.6875rem;color:#64748b;">${p.state_or_country}</div></td>
+        <td style="padding:12px 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:0.8125rem;font-weight:600;color:#fbbf24;">${p.max_draft_m}m</td>
+        <td style="padding:12px 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:0.8125rem;color:#94a3b8;">${p.max_loa_m}m</td>
+        <td style="padding:12px 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:0.8125rem;color:#94a3b8;">${p.max_beam_m}m</td>
+        <td style="padding:12px 14px;font-size:0.8125rem;color:#93c5fd;font-weight:500;">${p.allowed_vessel_classes.slice(-1)[0]}</td>
+        <td style="padding:12px 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:0.8125rem;color:#94a3b8;">${p.handling_rate_tpd.toLocaleString()}</td>
+        <td style="padding:12px 14px;text-align:center;"><span class="badge ${p.lighterage_required ? 'badge-amber' : 'badge-teal'}" style="font-size:9px;">${p.lighterage_required ? 'REQUIRED' : 'DIRECT'}</span></td>
+        <td style="padding:12px 20px;font-size:0.75rem;color:#64748b;">${p.notes || 'Direct rail link'}</td>`;
+      tbody.appendChild(tr);
+    });
+  } catch(e) { console.error('Ports error', e); }
 }
 
-// Board Approval Memo Modal
+// ─── Memo Modal ────────────────────────────────────────────────────────────
 function openProcurementMemo() {
-    if (!currentOptimizationData) return;
-    const d = currentOptimizationData;
-    const isWait = d.recommendation === "WAIT";
-    
-    document.getElementById("memo-date").textContent = new Date().toLocaleString();
-    document.getElementById("memo-officer").textContent = currentUserProfile ? `${currentUserProfile.name} (${currentUserProfile.role})` : "Devendra Tyagi (CPO)";
-    
-    const badge = document.getElementById("memo-decision-badge");
-    badge.className = isWait ? "px-2.5 py-0.5 rounded font-black bg-emerald-600 text-white" : "px-2.5 py-0.5 rounded font-black bg-sky-600 text-white";
-    badge.textContent = d.recommendation === "WAIT" ? `WAIT TO BOOK (TARGET DAY ${d.optimal_booking_day_offset})` : "BOOK SPOT CHARTER NOW";
-
-    document.getElementById("memo-rationale").textContent = d.decision_summary;
-    document.getElementById("memo-cargo").textContent = `${d.voyage_breakdown.parcel_tonnage_mt || 75000} MT ${document.getElementById("inp-commodity").value}`;
-    document.getElementById("memo-vessel").textContent = `${d.recommended_vessel_class} (Arrival Draft: ${d.voyage_breakdown.vessel_class || '13.95m'})`;
-    document.getElementById("memo-spot-rate").textContent = `$${d.current_spot_rate_usd_t.toFixed(2)} / MT`;
-    document.getElementById("memo-target-rate").textContent = `$${d.target_booking_rate_usd_t.toFixed(2)} / MT`;
-    document.getElementById("memo-savings").textContent = `$${d.expected_savings_usd.toLocaleString()} USD (${d.expected_savings_pct.toFixed(1)}% reduction)`;
-
-    document.getElementById("modal-memo").classList.remove("hidden");
-    lucide.createIcons();
+  if (!optimizationData) return;
+  const d = optimizationData;
+  const now = new Date();
+  document.getElementById('memo-date').textContent = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST';
+  document.getElementById('memo-officer').textContent = userProfile ? `${userProfile.name} (${userProfile.role})` : 'Devendra Tyagi (CPO)';
+  const badge = document.getElementById('memo-decision-badge');
+  badge.className = d.recommendation === 'WAIT' ? 'badge badge-teal' : 'badge badge-blue';
+  badge.textContent = d.recommendation === 'WAIT' ? `WAIT — TARGET DAY ${d.optimal_booking_day_offset}` : 'BOOK SPOT NOW';
+  document.getElementById('memo-rationale').textContent = d.decision_summary;
+  document.getElementById('memo-cargo').textContent = `${d.voyage_breakdown?.parcel_tonnage_mt || 75000} MT ${document.getElementById('inp-commodity').value}`;
+  document.getElementById('memo-vessel').textContent = d.recommended_vessel_class;
+  document.getElementById('memo-spot-rate').textContent = `$${d.current_spot_rate_usd_t.toFixed(2)} / MT`;
+  document.getElementById('memo-target-rate').textContent = `$${d.target_booking_rate_usd_t.toFixed(2)} / MT`;
+  document.getElementById('memo-savings').textContent = `$${d.expected_savings_usd.toLocaleString()} (${d.expected_savings_pct.toFixed(1)}%)`;
+  const modal = document.getElementById('modal-memo');
+  modal.style.display = 'flex';
+  lucide.createIcons();
 }
 
 function closeProcurementMemo() {
-    document.getElementById("modal-memo").classList.add("hidden");
+  document.getElementById('modal-memo').style.display = 'none';
 }
+
+// Expose globally
+window.navigateToTab = navigateToTab;
+window.toggleDropdown = toggleDropdown;
+window.loadScenario = loadScenario;
+window.switchUserRole = switchUserRole;
+window.runOptimization = runOptimization;
+window.loadBacktestData = loadBacktestData;
+window.markAllNotificationsRead = markAllNotificationsRead;
+window.openProcurementMemo = openProcurementMemo;
+window.closeProcurementMemo = closeProcurementMemo;
+window.showToast = showToast;
+window.initPortsHandbook = initPortsHandbook;
