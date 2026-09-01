@@ -1,4 +1,4 @@
-﻿from datetime import datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Dict, Any
 from app.models.schemas import (
     OptimizeRequest, OptimizeResponse, RiskAssessment,
@@ -8,6 +8,7 @@ from app.services.port_service import port_service
 from app.services.vessel_service import vessel_service
 from app.services.voyage_service import voyage_service
 from app.services.forecasting_engine import forecasting_engine
+from app.services.llm_service import llm_service
 
 class CharterOptimizerService:
     def optimize_charter_decision(self, req: OptimizeRequest) -> OptimizeResponse:
@@ -73,11 +74,15 @@ class CharterOptimizerService:
         expected_savings_usd = round(current_total_cost - (best_rate * req.parcel_tonnage_mt + (best_day_idx * adj_holding_cost)), 2)
         expected_savings_pct = round((expected_savings_usd / current_total_cost) * 100.0, 2)
 
+        origin_port = port_service.get_port_by_id(req.origin_port_id)
+        dest_port = port_service.get_port_by_id(req.dest_port_id)
+        origin_name = origin_port.get("name", req.origin_port_id) if origin_port else req.origin_port_id
+        dest_name = dest_port.get("name", req.dest_port_id) if dest_port else req.dest_port_id
+
         if best_day_idx > 0 and expected_savings_usd > 15000:
             recommendation = "WAIT"
             optimal_date = (today + timedelta(days=best_day_idx)).strftime("%Y-%m-%d")
             confidence = min(92.0, max(70.0, 85.0 - (best_day_idx * 1.2)))
-            summary = f"Wait to book around Day {best_day_idx} ({optimal_date}). Projected rate drop from ${spot_rate:.2f}/MT to ${best_rate:.2f}/MT delivers net savings of ${expected_savings_usd:,.0f} ({expected_savings_pct:.1f}%)."
         else:
             recommendation = "BOOK_NOW"
             best_day_idx = 0
@@ -86,7 +91,22 @@ class CharterOptimizerService:
             expected_savings_pct = 0.0
             optimal_date = today.strftime("%Y-%m-%d")
             confidence = 88.0
-            summary = f"Market is at a local bottom (${spot_rate:.2f}/MT) or upward pressure is expected. Lock in charter today to eliminate supply chain & demurrage risk."
+
+        # Generate LLM-powered Executive Summary & Narrative
+        summary = llm_service.generate_decision_narrative(
+            recommendation=recommendation,
+            commodity=req.commodity,
+            parcel_tonnage=req.parcel_tonnage_mt,
+            origin_port_name=origin_name,
+            dest_port_name=dest_name,
+            recommended_vessel=recommended_class,
+            current_spot=spot_rate,
+            target_rate=best_rate,
+            expected_savings=expected_savings_usd,
+            savings_pct=expected_savings_pct,
+            optimal_day=best_day_idx,
+            confidence_pct=confidence
+        )
 
         # 6. Risk Assessment
         dest_port = port_service.get_port_by_id(req.dest_port_id)

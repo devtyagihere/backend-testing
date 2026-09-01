@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, HTTPException, Query, Body
+from fastapi import APIRouter, HTTPException, Query, Body
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from app.models.schemas import (
@@ -12,6 +12,7 @@ from app.services.voyage_service import voyage_service
 from app.services.forecasting_engine import forecasting_engine
 from app.services.optimizer_service import optimizer_service
 from app.services.backtest_service import backtest_service
+from app.services.llm_service import llm_service
 
 router = APIRouter()
 
@@ -163,8 +164,14 @@ def health_check():
         "status": "healthy",
         "service": "SAIL Freight Forecasting & Chartering Decision Engine",
         "version": "1.0.0",
+        "ai_engine": {
+            "provider": "Groq",
+            "connected": llm_service.is_available(),
+            "model": llm_service.model if llm_service.is_available() else None
+        },
         "timestamp": datetime.now().isoformat()
     }
+
 
 @router.get("/scenarios", tags=["Demos & Presets"])
 def get_preset_scenarios():
