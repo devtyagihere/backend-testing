@@ -19,5 +19,10 @@ class Settings(BaseModel):
     GROQ_API_KEY: Optional[str] = os.getenv("GROQ_API_KEY")
     GROQ_MODEL: str = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
 
+    # Data Pipeline API Keys
+    EIA_API_KEY: Optional[str] = os.getenv("EIA_API_KEY")
+    ALPHA_VANTAGE_API_KEY: Optional[str] = os.getenv("ALPHA_VANTAGE_API_KEY")
+    FRED_API_KEY: Optional[str] = os.getenv("FRED_API_KEY")
+
 settings = Settings()
 

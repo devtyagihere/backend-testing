@@ -1,4 +1,4 @@
-﻿import csv
+import csv
 import os
 import json
 from datetime import datetime
@@ -30,14 +30,16 @@ def run_data_quality_audit():
         assert os.path.exists(rf), f"Missing raw dataset: {rf}"
         with open(rf, "r", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
-            assert len(rows) == 730, f"Expected 730 records in {rf}, found {len(rows)}"
+            # Real API data spans 2020-2026 (~2436 rows); synthetic was 730.
+            # Accept any coverage >= 730 days (minimum 2-year window)
+            assert len(rows) >= 730, f"Insufficient records in {rf}: found {len(rows)}, minimum 730 required"
             dates = [r["date"] for r in rows]
             # No duplicate dates
             assert len(dates) == len(set(dates)), f"Duplicate dates detected in {rf}"
             # Valid date format
             for d in dates:
                 datetime.strptime(d, "%Y-%m-%d")
-        print(f"[PASS] Raw Stream verified: {rf} (730 clean daily records, YYYY-MM-DD compliant)")
+        print(f"[PASS] Raw Stream verified: {rf} ({len(rows)} clean daily records, YYYY-MM-DD compliant)")
 
     # 3. Processed Merged Feature Matrix check
     proc_csv = "data/processed/merged_daily_features.csv"
@@ -46,7 +48,7 @@ def run_data_quality_audit():
     
     with open(proc_csv, "r", encoding="utf-8") as f:
         p_rows = list(csv.DictReader(f))
-        assert len(p_rows) == 730
+        assert len(p_rows) >= 730, f"Processed feature matrix too short: {len(p_rows)} rows"
         print(f"[PASS] Processed Feature Matrix verified: {len(p_rows)} observations with {len(p_rows[0])} aligned columns.")
 
     print("==================================================")
