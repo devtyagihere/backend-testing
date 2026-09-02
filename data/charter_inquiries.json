@@ -1,0 +1,42 @@
+[
+  {
+    "inquiry_id": "FW-2026-441758",
+    "first_name": "Aarav",
+    "last_name": "Mehta",
+    "email": "aarav.mehta@reliance.com",
+    "commodity": "Clean Petroleum Products (ULSD/Gasoline)",
+    "parcel_mt": 50000.0,
+    "load_port": "Jamnagar, India",
+    "discharge_port": "Rotterdam, Netherlands",
+    "voyage_notes": "End-to-End verified fixture inquiry",
+    "status": "PENDING",
+    "created_at": "2026-09-02T20:17:12.194211+00:00"
+  },
+  {
+    "inquiry_id": "FW-2026-535233",
+    "first_name": "Priya",
+    "last_name": "Verma",
+    "email": "priya.verma@shipping.com",
+    "commodity": "Liquid Chemicals (IMO II/III)",
+    "parcel_mt": 12000.0,
+    "load_port": "Rotterdam",
+    "discharge_port": "Piraeus",
+    "voyage_notes": "",
+    "status": "VESSEL MATCHING",
+    "created_at": "2026-09-02T20:16:38.323137+00:00",
+    "updated_at": "2026-09-02T20:16:39.822953+00:00"
+  },
+  {
+    "inquiry_id": "FW-2026-216970",
+    "first_name": "Arjun",
+    "last_name": "Sharma",
+    "email": "arjun.sharma@sailsteel.in",
+    "commodity": "Clean Petroleum Products (ULSD/Gasoline)",
+    "parcel_mt": 75000.0,
+    "load_port": "Augusta, IT",
+    "discharge_port": "Paradip, IN",
+    "voyage_notes": "Urgent delivery required within laycan window",
+    "status": "PENDING",
+    "created_at": "2026-09-02T20:16:36.747928+00:00"
+  }
+]

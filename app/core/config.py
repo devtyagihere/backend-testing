@@ -24,5 +24,16 @@ class Settings(BaseModel):
     ALPHA_VANTAGE_API_KEY: Optional[str] = os.getenv("ALPHA_VANTAGE_API_KEY")
     FRED_API_KEY: Optional[str] = os.getenv("FRED_API_KEY")
 
-settings = Settings()
+    # Supabase — Charter Inquiries
+    SUPABASE_URL: Optional[str] = os.getenv("SUPABASE_URL")
+    SUPABASE_PUBLISHABLE_KEY: Optional[str] = os.getenv("SUPABASE_PUBLISHABLE_KEY")
+    SUPABASE_SERVICE_KEY: Optional[str] = os.getenv("SUPABASE_SERVICE_KEY")
 
+    # Resend — Transactional Email
+    RESEND_API_KEY: Optional[str] = os.getenv("RESEND_API_KEY")
+    OWNER_EMAIL: str = os.getenv("OWNER_EMAIL", "admin@freightmaritime.com")
+
+    # Admin Dashboard
+    ADMIN_SECRET_TOKEN: str = os.getenv("ADMIN_SECRET_TOKEN", "fw-admin-2026-secure-token")
+
+settings = Settings()

@@ -186,34 +186,121 @@
       const [quoteForm, setQuoteForm] = useState({
         firstName: "",
         lastName: "",
-        company: "",
         email: "",
         cargoType: "clean_petroleum",
         quantityMt: "10000",
         loadPort: "",
         dischargePort: "",
-        laycan: "",
         message: ""
       });
-      const [quoteSuccess, setQuoteSuccess] = useState(false);
+      const [formErrors, setFormErrors] = useState({});
+      const [isSubmitting, setIsSubmitting] = useState(false);
+      const [submittedInquiry, setSubmittedInquiry] = useState(null);
+      const [submitError, setSubmitError] = useState("");
 
       useEffect(() => {
         if (window.lucide) {
           lucide.createIcons();
         }
-      }, [selectedVessel, isQuoteOpen, activeFilter]);
+      }, [selectedVessel, isQuoteOpen, activeFilter, submittedInquiry, isSubmitting]);
 
       const filteredFleet = activeFilter === "all" 
         ? FLEET_DATA 
         : FLEET_DATA.filter(v => v.category === activeFilter);
 
-      const handleQuoteSubmit = (e) => {
-        e.preventDefault();
-        setQuoteSuccess(true);
-        setTimeout(() => {
-          setQuoteSuccess(false);
-          setIsQuoteOpen(false);
-        }, 3000);
+      const validateForm = () => {
+        const errors = {};
+        if (!quoteForm.firstName.trim()) errors.firstName = "First Name is required";
+        if (!quoteForm.lastName.trim()) errors.lastName = "Last Name is required";
+        
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!quoteForm.email.trim()) {
+          errors.email = "Corporate Email is required";
+        } else if (!emailRegex.test(quoteForm.email.trim())) {
+          errors.email = "Please enter a valid email address";
+        }
+
+        if (!quoteForm.cargoType) errors.cargoType = "Please select a cargo commodity";
+        
+        const parcelVal = parseFloat(quoteForm.quantityMt);
+        if (isNaN(parcelVal) || parcelVal <= 0) {
+          errors.quantityMt = "Parcel must be a positive number";
+        }
+
+        if (!quoteForm.loadPort.trim()) errors.loadPort = "Load Port is required";
+        if (!quoteForm.dischargePort.trim()) errors.dischargePort = "Discharge Port is required";
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+      };
+
+      const handleQuoteSubmit = async (e) => {
+        if (e) e.preventDefault();
+        setSubmitError("");
+        if (!validateForm()) return;
+
+        setIsSubmitting(true);
+        try {
+          const commodityMap = {
+            "clean_petroleum": "Clean Petroleum Products (ULSD/Gasoline)",
+            "chemicals": "Liquid Chemicals (IMO II/III)",
+            "biofuels": "Biofuels / Bio-intermediates",
+            "dry_bulk": "Dry Bulk / Coking Coal / Ore"
+          };
+
+          const payload = {
+            first_name: quoteForm.firstName.trim(),
+            last_name: quoteForm.lastName.trim(),
+            email: quoteForm.email.trim(),
+            commodity: commodityMap[quoteForm.cargoType] || quoteForm.cargoType,
+            parcel_mt: parseFloat(quoteForm.quantityMt),
+            load_port: quoteForm.loadPort.trim(),
+            discharge_port: quoteForm.dischargePort.trim(),
+            voyage_notes: quoteForm.message ? quoteForm.message.trim() : ""
+          };
+
+          const response = await fetch("/api/v1/charter/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          const resData = await response.json();
+          if (!response.ok) {
+            throw new Error(resData.detail || "Submission failed. Please try again.");
+          }
+
+          setSubmittedInquiry({
+            inquiryId: resData.inquiry_id,
+            firstName: payload.first_name,
+            email: payload.email,
+            commodity: payload.commodity,
+            parcel: payload.parcel_mt
+          });
+
+          // Reset form fields
+          setQuoteForm({
+            firstName: "",
+            lastName: "",
+            email: "",
+            cargoType: "clean_petroleum",
+            quantityMt: "10000",
+            loadPort: "",
+            dischargePort: "",
+            message: ""
+          });
+          setFormErrors({});
+        } catch (err) {
+          setSubmitError(err.message || "An unexpected network error occurred.");
+        } finally {
+          setIsSubmitting(false);
+        }
+      };
+
+      const resetSuccessExperience = () => {
+        setSubmittedInquiry(null);
+        setSubmitError("");
+        setIsQuoteOpen(false);
       };
 
       return (
@@ -235,23 +322,19 @@
               </a>
 
               {/* Navigation Links */}
-              <nav className="hidden lg:flex items-center space-x-8 text-xs uppercase tracking-widest font-mono text-[#94a3b8]">
-                <a href="#about" className="hover:text-white transition-colors">/ 02 ABOUT</a>
-                <a href="#fleet" className="hover:text-white transition-colors">/ 03 FLEET</a>
-                <a href="#services" className="hover:text-white transition-colors">/ 04 SERVICES</a>
-                <a href="#figures" className="hover:text-white transition-colors">/ 05 FIGURES</a>
-                <a href="#contacts" className="hover:text-white transition-colors">/ 07 CONTACTS</a>
+              <nav className="hidden lg:flex items-center space-x-8 text-sm font-medium text-[#94a3b8]">
+                <a href="#" className="hover:text-white transition-colors duration-200">Home</a>
+                <a href="#about" className="hover:text-white transition-colors duration-200">About</a>
+                <a href="#fleet" className="hover:text-white transition-colors duration-200">Fleet</a>
+                <a href="#team" className="hover:text-white transition-colors duration-200">Team</a>
+                <a href="/sail-portal" className="flex items-center space-x-2 text-cyan-300 hover:text-white transition-colors duration-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-live"></span>
+                  <span>Sail Portal</span>
+                </a>
               </nav>
 
-              {/* Action Navigation Buttons */}
-              <div className="flex items-center space-x-3">
-                <a 
-                  href="/sail-portal" 
-                  className="btn-pill-dark font-mono text-xs text-cyan-300 border-cyan-500/30 hover:border-cyan-400"
-                >
-                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-live"></span>
-                  <span>SAIL Portal</span>
-                </a>
+              {/* CTA Button */}
+              <div className="flex items-center">
                 <button 
                   onClick={() => setIsQuoteOpen(true)}
                   className="btn-pill-white font-mono text-xs uppercase"
@@ -741,117 +824,176 @@
                     <span className="text-[#00a8ff]">RESPONSE WITHIN 2 HOURS</span>
                   </div>
 
-                  <form onSubmit={handleQuoteSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs">
-                      <div>
-                        <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">First Name</label>
-                        <input 
-                          type="text" 
-                          required
-                          value={quoteForm.firstName}
-                          onChange={(e) => setQuoteForm({ ...quoteForm, firstName: e.target.value })}
-                          className="fm-input"
-                          placeholder="Captain / Broker"
-                        />
+                  {submittedInquiry ? (
+                    <div className="space-y-6 py-6 text-center">
+                      <div className="w-16 h-16 rounded-2xl bg-emerald-950/80 border border-emerald-500/50 flex items-center justify-center mx-auto text-[#00d084] shadow-lg shadow-emerald-950">
+                        <i data-lucide="check-circle-2" className="w-8 h-8"></i>
                       </div>
-                      <div>
-                        <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Last Name</label>
-                        <input 
-                          type="text" 
-                          required
-                          value={quoteForm.lastName}
-                          onChange={(e) => setQuoteForm({ ...quoteForm, lastName: e.target.value })}
-                          className="fm-input"
-                          placeholder="Name"
-                        />
+                      <div className="space-y-2">
+                        <span className="badge-pill badge-emerald">CONFIRMED IN DATABASE</span>
+                        <h3 className="font-syne font-bold text-2xl text-white">CHARTER INQUIRY RECEIVED</h3>
+                        <p className="text-[#94a3b8] font-mono text-xs max-w-md mx-auto">
+                          Your inquiry has been successfully submitted. Our chartering team will review your request and respond within 2 hours.
+                        </p>
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs">
-                      <div>
-                        <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Corporate Email</label>
-                        <input 
-                          type="email" 
-                          required
-                          value={quoteForm.email}
-                          onChange={(e) => setQuoteForm({ ...quoteForm, email: e.target.value })}
-                          className="fm-input"
-                          placeholder="chartering@company.com"
-                        />
+                      <div className="p-4 bg-[#080808] border border-white/10 rounded-2xl max-w-sm mx-auto font-mono text-xs space-y-1">
+                        <span className="text-[#64748b] text-[10px] uppercase block">Inquiry Reference ID</span>
+                        <span className="text-xl font-bold text-[#00a8ff] tracking-wider block">{submittedInquiry.inquiryId}</span>
+                        <span className="text-[10px] text-[#94a3b8]">A confirmation email has been dispatched to {submittedInquiry.email}</span>
                       </div>
-                      <div>
-                        <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Cargo Commodity</label>
-                        <select 
-                          value={quoteForm.cargoType}
-                          onChange={(e) => setQuoteForm({ ...quoteForm, cargoType: e.target.value })}
-                          className="fm-input"
+
+                      <div className="pt-2">
+                        <button 
+                          onClick={resetSuccessExperience}
+                          className="btn-pill-white font-mono text-xs uppercase"
                         >
-                          <option value="clean_petroleum">Clean Petroleum Products (ULSD/Gasoline)</option>
-                          <option value="chemicals">Liquid Chemicals (IMO II/III)</option>
-                          <option value="biofuels">Biofuels / Bio-intermediates</option>
-                          <option value="dry_bulk">Dry Bulk / Coking Coal / Ore</option>
-                        </select>
+                          RETURN TO FREIGHTWAVES
+                        </button>
                       </div>
                     </div>
+                  ) : (
+                    <form onSubmit={handleQuoteSubmit} className="space-y-4 font-mono text-xs">
+                      {submitError && (
+                        <div className="p-3.5 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 font-mono text-xs flex items-center space-x-2">
+                          <i data-lucide="alert-circle" className="w-4 h-4 shrink-0 text-rose-400"></i>
+                          <span>{submitError}</span>
+                        </div>
+                      )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-xs">
-                      <div>
-                        <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Parcel (MT)</label>
-                        <input 
-                          type="number" 
-                          value={quoteForm.quantityMt}
-                          onChange={(e) => setQuoteForm({ ...quoteForm, quantityMt: e.target.value })}
-                          className="fm-input"
-                          placeholder="10,000"
-                        />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">First Name *</label>
+                          <input 
+                            type="text" 
+                            value={quoteForm.firstName}
+                            onChange={(e) => {
+                              setQuoteForm({ ...quoteForm, firstName: e.target.value });
+                              if (formErrors.firstName) setFormErrors({ ...formErrors, firstName: null });
+                            }}
+                            className={`fm-input ${formErrors.firstName ? 'border-rose-500' : ''}`}
+                            placeholder="Captain / Broker"
+                          />
+                          {formErrors.firstName && <span className="text-[10px] text-rose-400 mt-1 block">{formErrors.firstName}</span>}
+                        </div>
+                        <div>
+                          <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Last Name *</label>
+                          <input 
+                            type="text" 
+                            value={quoteForm.lastName}
+                            onChange={(e) => {
+                              setQuoteForm({ ...quoteForm, lastName: e.target.value });
+                              if (formErrors.lastName) setFormErrors({ ...formErrors, lastName: null });
+                            }}
+                            className={`fm-input ${formErrors.lastName ? 'border-rose-500' : ''}`}
+                            placeholder="Name"
+                          />
+                          {formErrors.lastName && <span className="text-[10px] text-rose-400 mt-1 block">{formErrors.lastName}</span>}
+                        </div>
                       </div>
-                      <div>
-                        <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Load Port</label>
-                        <input 
-                          type="text" 
-                          value={quoteForm.loadPort}
-                          onChange={(e) => setQuoteForm({ ...quoteForm, loadPort: e.target.value })}
-                          className="fm-input"
-                          placeholder="e.g. Augusta, IT"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Discharge Port</label>
-                        <input 
-                          type="text" 
-                          value={quoteForm.dischargePort}
-                          onChange={(e) => setQuoteForm({ ...quoteForm, dischargePort: e.target.value })}
-                          className="fm-input"
-                          placeholder="e.g. Paradip / Piraeus"
-                        />
-                      </div>
-                    </div>
 
-                    <div className="font-mono text-xs">
-                      <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Voyage Notes / Laycan</label>
-                      <textarea 
-                        rows="3"
-                        value={quoteForm.message}
-                        onChange={(e) => setQuoteForm({ ...quoteForm, message: e.target.value })}
-                        className="fm-input"
-                        placeholder="Laycan window, vetting requirements, charterers profile..."
-                      ></textarea>
-                    </div>
-
-                    {quoteSuccess ? (
-                      <div className="p-4 rounded-xl bg-emerald-950/80 border border-emerald-500 text-[#00d084] font-mono text-xs flex items-center space-x-2">
-                        <i data-lucide="check-circle" className="w-5 h-5 shrink-0"></i>
-                        <span>Fixture inquiry successfully dispatched to chartering@freightmaritime.com desk.</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Corporate Email *</label>
+                          <input 
+                            type="email" 
+                            value={quoteForm.email}
+                            onChange={(e) => {
+                              setQuoteForm({ ...quoteForm, email: e.target.value });
+                              if (formErrors.email) setFormErrors({ ...formErrors, email: null });
+                            }}
+                            className={`fm-input ${formErrors.email ? 'border-rose-500' : ''}`}
+                            placeholder="chartering@company.com"
+                          />
+                          {formErrors.email && <span className="text-[10px] text-rose-400 mt-1 block">{formErrors.email}</span>}
+                        </div>
+                        <div>
+                          <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Cargo Commodity *</label>
+                          <select 
+                            value={quoteForm.cargoType}
+                            onChange={(e) => setQuoteForm({ ...quoteForm, cargoType: e.target.value })}
+                            className="fm-input"
+                          >
+                            <option value="clean_petroleum">Clean Petroleum Products (ULSD/Gasoline)</option>
+                            <option value="chemicals">Liquid Chemicals (IMO II/III)</option>
+                            <option value="biofuels">Biofuels / Bio-intermediates</option>
+                            <option value="dry_bulk">Dry Bulk / Coking Coal / Ore</option>
+                          </select>
+                        </div>
                       </div>
-                    ) : (
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Parcel (MT) *</label>
+                          <input 
+                            type="number" 
+                            value={quoteForm.quantityMt}
+                            onChange={(e) => {
+                              setQuoteForm({ ...quoteForm, quantityMt: e.target.value });
+                              if (formErrors.quantityMt) setFormErrors({ ...formErrors, quantityMt: null });
+                            }}
+                            className={`fm-input ${formErrors.quantityMt ? 'border-rose-500' : ''}`}
+                            placeholder="10,000"
+                          />
+                          {formErrors.quantityMt && <span className="text-[10px] text-rose-400 mt-1 block">{formErrors.quantityMt}</span>}
+                        </div>
+                        <div>
+                          <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Load Port *</label>
+                          <input 
+                            type="text" 
+                            value={quoteForm.loadPort}
+                            onChange={(e) => {
+                              setQuoteForm({ ...quoteForm, loadPort: e.target.value });
+                              if (formErrors.loadPort) setFormErrors({ ...formErrors, loadPort: null });
+                            }}
+                            className={`fm-input ${formErrors.loadPort ? 'border-rose-500' : ''}`}
+                            placeholder="e.g. Augusta, IT"
+                          />
+                          {formErrors.loadPort && <span className="text-[10px] text-rose-400 mt-1 block">{formErrors.loadPort}</span>}
+                        </div>
+                        <div>
+                          <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Discharge Port *</label>
+                          <input 
+                            type="text" 
+                            value={quoteForm.dischargePort}
+                            onChange={(e) => {
+                              setQuoteForm({ ...quoteForm, dischargePort: e.target.value });
+                              if (formErrors.dischargePort) setFormErrors({ ...formErrors, dischargePort: null });
+                            }}
+                            className={`fm-input ${formErrors.dischargePort ? 'border-rose-500' : ''}`}
+                            placeholder="e.g. Paradip / Piraeus"
+                          />
+                          {formErrors.dischargePort && <span className="text-[10px] text-rose-400 mt-1 block">{formErrors.dischargePort}</span>}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Voyage Notes / Laycan</label>
+                        <textarea 
+                          rows="3"
+                          value={quoteForm.message}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, message: e.target.value })}
+                          className="fm-input"
+                          placeholder="Laycan window, vetting requirements, charterers profile..."
+                        ></textarea>
+                      </div>
+
                       <button 
                         type="submit"
-                        className="btn-pill-white w-full font-mono text-xs uppercase font-bold py-3.5"
+                        disabled={isSubmitting}
+                        className="btn-pill-white w-full uppercase font-bold py-3.5 disabled:opacity-50 flex items-center justify-center space-x-2"
                       >
-                        Submit Charter Inquiry
+                        {isSubmitting ? (
+                          <>
+                            <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                            <span>SUBMITTING INQUIRY...</span>
+                          </>
+                        ) : (
+                          <span>SUBMIT CHARTER INQUIRY</span>
+                        )}
                       </button>
-                    )}
-                  </form>
+                    </form>
+                  )}
                 </div>
 
               </div>
@@ -987,105 +1129,175 @@
                     </button>
                   </div>
 
-                  <form onSubmit={handleQuoteSubmit} className="space-y-4 font-mono text-xs">
-                    <div>
-                      <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Contact Name</label>
-                      <input 
-                        type="text" 
-                        required
-                        value={quoteForm.firstName}
-                        onChange={(e) => setQuoteForm({ ...quoteForm, firstName: e.target.value })}
-                        className="fm-input"
-                        placeholder="Your full name"
-                      />
-                    </div>
+                  {submittedInquiry ? (
+                    <div className="space-y-6 py-12 text-center">
+                      <div className="w-16 h-16 rounded-2xl bg-emerald-950/80 border border-emerald-500/50 flex items-center justify-center mx-auto text-[#00d084] shadow-lg shadow-emerald-950">
+                        <i data-lucide="check-circle-2" className="w-8 h-8"></i>
+                      </div>
+                      <div className="space-y-2">
+                        <span className="badge-pill badge-emerald">CONFIRMED IN DATABASE</span>
+                        <h3 className="font-syne font-bold text-2xl text-white">CHARTER INQUIRY RECEIVED</h3>
+                        <p className="text-[#94a3b8] font-mono text-xs max-w-sm mx-auto">
+                          Your inquiry has been successfully submitted. Reference ID: <strong className="text-white">{submittedInquiry.inquiryId}</strong>. Our chartering team will review your request and respond within 2 hours.
+                        </p>
+                      </div>
 
-                    <div>
-                      <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Corporate Email</label>
-                      <input 
-                        type="email" 
-                        required
-                        value={quoteForm.email}
-                        onChange={(e) => setQuoteForm({ ...quoteForm, email: e.target.value })}
-                        className="fm-input"
-                        placeholder="chartering@corporation.com"
-                      />
-                    </div>
+                      <div className="p-4 bg-[#080808] border border-white/10 rounded-2xl max-w-xs mx-auto font-mono text-xs space-y-1">
+                        <span className="text-[#64748b] text-[10px] uppercase block">Inquiry ID</span>
+                        <span className="text-xl font-bold text-[#00a8ff] tracking-wider block">{submittedInquiry.inquiryId}</span>
+                      </div>
 
-                    <div>
-                      <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Commodity Grade</label>
-                      <select 
-                        value={quoteForm.cargoType}
-                        onChange={(e) => setQuoteForm({ ...quoteForm, cargoType: e.target.value })}
-                        className="fm-input"
-                      >
-                        <option value="clean_petroleum">Clean Petroleum Products (ULSD/Gasoline)</option>
-                        <option value="chemicals">Liquid Chemicals (IMO II/III)</option>
-                        <option value="biofuels">Biofuels / Bio-intermediates</option>
-                        <option value="dry_bulk">Dry Bulk / Coking Coal / Ore</option>
-                      </select>
+                      <div className="pt-4">
+                        <button 
+                          onClick={resetSuccessExperience}
+                          className="btn-pill-white font-mono text-xs uppercase"
+                        >
+                          RETURN TO FREIGHTWAVES
+                        </button>
+                      </div>
                     </div>
+                  ) : (
+                    <form onSubmit={handleQuoteSubmit} className="space-y-4 font-mono text-xs">
+                      {submitError && (
+                        <div className="p-3.5 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 font-mono text-xs flex items-center space-x-2">
+                          <i data-lucide="alert-circle" className="w-4 h-4 shrink-0 text-rose-400"></i>
+                          <span>{submitError}</span>
+                        </div>
+                      )}
 
-                    <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">First Name *</label>
+                          <input 
+                            type="text" 
+                            value={quoteForm.firstName}
+                            onChange={(e) => {
+                              setQuoteForm({ ...quoteForm, firstName: e.target.value });
+                              if (formErrors.firstName) setFormErrors({ ...formErrors, firstName: null });
+                            }}
+                            className={`fm-input ${formErrors.firstName ? 'border-rose-500' : ''}`}
+                            placeholder="First name"
+                          />
+                          {formErrors.firstName && <span className="text-[10px] text-rose-400 mt-1 block">{formErrors.firstName}</span>}
+                        </div>
+                        <div>
+                          <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Last Name *</label>
+                          <input 
+                            type="text" 
+                            value={quoteForm.lastName}
+                            onChange={(e) => {
+                              setQuoteForm({ ...quoteForm, lastName: e.target.value });
+                              if (formErrors.lastName) setFormErrors({ ...formErrors, lastName: null });
+                            }}
+                            className={`fm-input ${formErrors.lastName ? 'border-rose-500' : ''}`}
+                            placeholder="Last name"
+                          />
+                          {formErrors.lastName && <span className="text-[10px] text-rose-400 mt-1 block">{formErrors.lastName}</span>}
+                        </div>
+                      </div>
+
                       <div>
-                        <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Load Port</label>
+                        <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Corporate Email *</label>
                         <input 
-                          type="text" 
-                          required
-                          value={quoteForm.loadPort}
-                          onChange={(e) => setQuoteForm({ ...quoteForm, loadPort: e.target.value })}
-                          className="fm-input"
-                          placeholder="e.g. Genoa / Hay Point"
+                          type="email" 
+                          value={quoteForm.email}
+                          onChange={(e) => {
+                            setQuoteForm({ ...quoteForm, email: e.target.value });
+                            if (formErrors.email) setFormErrors({ ...formErrors, email: null });
+                          }}
+                          className={`fm-input ${formErrors.email ? 'border-rose-500' : ''}`}
+                          placeholder="chartering@corporation.com"
                         />
+                        {formErrors.email && <span className="text-[10px] text-rose-400 mt-1 block">{formErrors.email}</span>}
                       </div>
+
                       <div>
-                        <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Discharge Port</label>
-                        <input 
-                          type="text" 
-                          required
-                          value={quoteForm.dischargePort}
-                          onChange={(e) => setQuoteForm({ ...quoteForm, dischargePort: e.target.value })}
+                        <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Commodity Grade *</label>
+                        <select 
+                          value={quoteForm.cargoType}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, cargoType: e.target.value })}
                           className="fm-input"
-                          placeholder="e.g. Alexandria / Paradip"
+                        >
+                          <option value="clean_petroleum">Clean Petroleum Products (ULSD/Gasoline)</option>
+                          <option value="chemicals">Liquid Chemicals (IMO II/III)</option>
+                          <option value="biofuels">Biofuels / Bio-intermediates</option>
+                          <option value="dry_bulk">Dry Bulk / Coking Coal / Ore</option>
+                        </select>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Load Port *</label>
+                          <input 
+                            type="text" 
+                            value={quoteForm.loadPort}
+                            onChange={(e) => {
+                              setQuoteForm({ ...quoteForm, loadPort: e.target.value });
+                              if (formErrors.loadPort) setFormErrors({ ...formErrors, loadPort: null });
+                            }}
+                            className={`fm-input ${formErrors.loadPort ? 'border-rose-500' : ''}`}
+                            placeholder="e.g. Genoa / Hay Point"
+                          />
+                          {formErrors.loadPort && <span className="text-[10px] text-rose-400 mt-1 block">{formErrors.loadPort}</span>}
+                        </div>
+                        <div>
+                          <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Discharge Port *</label>
+                          <input 
+                            type="text" 
+                            value={quoteForm.dischargePort}
+                            onChange={(e) => {
+                              setQuoteForm({ ...quoteForm, dischargePort: e.target.value });
+                              if (formErrors.dischargePort) setFormErrors({ ...formErrors, dischargePort: null });
+                            }}
+                            className={`fm-input ${formErrors.dischargePort ? 'border-rose-500' : ''}`}
+                            placeholder="e.g. Alexandria / Paradip"
+                          />
+                          {formErrors.dischargePort && <span className="text-[10px] text-rose-400 mt-1 block">{formErrors.dischargePort}</span>}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Quantity (MT) *</label>
+                        <input 
+                          type="number" 
+                          value={quoteForm.quantityMt}
+                          onChange={(e) => {
+                            setQuoteForm({ ...quoteForm, quantityMt: e.target.value });
+                            if (formErrors.quantityMt) setFormErrors({ ...formErrors, quantityMt: null });
+                          }}
+                          className={`fm-input ${formErrors.quantityMt ? 'border-rose-500' : ''}`}
+                          placeholder="10000"
                         />
+                        {formErrors.quantityMt && <span className="text-[10px] text-rose-400 mt-1 block">{formErrors.quantityMt}</span>}
                       </div>
-                    </div>
 
-                    <div>
-                      <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Quantity (MT)</label>
-                      <input 
-                        type="number" 
-                        value={quoteForm.quantityMt}
-                        onChange={(e) => setQuoteForm({ ...quoteForm, quantityMt: e.target.value })}
-                        className="fm-input"
-                        placeholder="10000"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Special Instructions</label>
-                      <textarea 
-                        rows="3"
-                        value={quoteForm.message}
-                        onChange={(e) => setQuoteForm({ ...quoteForm, message: e.target.value })}
-                        className="fm-input"
-                        placeholder="Laycan, temperature requirements, pump rates..."
-                      ></textarea>
-                    </div>
-
-                    {quoteSuccess ? (
-                      <div className="p-4 rounded-xl bg-emerald-950/80 border border-emerald-500 text-[#00d084]">
-                        Inquiry received. A chartering broker will reach out within 2 hours.
+                      <div>
+                        <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Special Instructions</label>
+                        <textarea 
+                          rows="3"
+                          value={quoteForm.message}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, message: e.target.value })}
+                          className="fm-input"
+                          placeholder="Laycan, temperature requirements, pump rates..."
+                        ></textarea>
                       </div>
-                    ) : (
+
                       <button 
                         type="submit"
-                        className="btn-pill-white w-full font-mono text-xs uppercase"
+                        disabled={isSubmitting}
+                        className="btn-pill-white w-full font-mono text-xs uppercase disabled:opacity-50 flex items-center justify-center space-x-2"
                       >
-                        Request Instant Quote
+                        {isSubmitting ? (
+                          <>
+                            <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                            <span>SUBMITTING INQUIRY...</span>
+                          </>
+                        ) : (
+                          <span>Request Instant Quote</span>
+                        )}
                       </button>
-                    )}
-                  </form>
+                    </form>
+                  )}
 
                 </div>
               </div>

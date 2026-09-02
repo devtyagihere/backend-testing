@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FreightWaves — Admin Chartering Cockpit</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            fm: {
+              pitch: '#080808',
+              dark: '#0a0b0d',
+              surface: '#121418',
+              card: '#16181e',
+              border: 'rgba(255, 255, 255, 0.08)',
+              blue: '#00a8ff',
+              steel: '#94a3b8'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-[#080808] text-white min-h-screen flex flex-col grid-overlay selection:bg-[#00a8ff] selection:text-black">
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- AUTH MODAL -->
+  <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+    <div class="bg-[#121418] border border-white/15 rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl relative">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center font-bold text-black">
+          <i data-lucide="shield-check" class="w-5 h-5 text-black"></i>
+        </div>
+        <div>
+          <h2 class="font-syne font-bold text-xl text-white">FreightWaves Admin</h2>
+          <p class="text-[11px] text-[#94a3b8] font-mono">Protected Charter Inquiries Cockpit</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-[#94a3b8] leading-relaxed">
+        Please enter the administrative access key to inspect and manage inbound chartering inquiries.
+      </p>
+
+      <form id="auth-form" onsubmit="handleAdminLogin(event)" class="space-y-4">
+        <div>
+          <label class="fm-label">Admin Secret Key</label>
+          <input 
+            type="password" 
+            id="admin-token-input" 
+            required 
+            placeholder="Enter ADMIN_SECRET_TOKEN..." 
+            class="fm-input" 
+          />
+        </div>
+        <div id="auth-error" class="hidden text-rose-400 font-mono text-xs p-3 rounded-lg bg-rose-950/50 border border-rose-500/30">
+          Invalid administrative access key. Access denied.
+        </div>
+        <button type="submit" class="btn-pill-white w-full uppercase font-bold py-3">
+          Authenticate & Unlock
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADMIN DASHBOARD -->
+  <div id="admin-app" class="hidden flex-col flex-grow">
+    
+    <!-- TOP HEADER -->
+    <header class="glass-header sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <a href="/" class="flex items-center space-x-3 group">
+            <div class="w-9 h-9 border border-white/20 rounded-lg flex items-center justify-center group-hover:border-white transition-colors bg-white/5">
+              <span class="font-syne font-bold text-lg text-white">FW</span>
+            </div>
+            <div class="flex flex-col">
+              <span class="font-syne font-extrabold text-base tracking-[0.2em] text-white">FREIGHTWAVES</span>
+              <span class="text-[9px] uppercase tracking-widest text-[#00a8ff] font-mono">Charter Desk Admin</span>
+            </div>
+          </a>
+          <span class="hidden sm:inline-block badge-pill badge-emerald">● REALTIME SYNC</span>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <a href="/sail-portal" class="btn-pill-dark font-mono text-xs">
+            <i data-lucide="compass" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span>Sail Portal</span>
+          </a>
+          <button onclick="fetchInquiries()" class="btn-pill-dark font-mono text-xs">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-[#00a8ff]"></i>
+            <span>Refresh</span>
+          </button>
+          <button onclick="handleLogout()" class="btn-pill-white font-mono text-xs uppercase">
+            Lock Cockpit
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN BODY -->
+    <main class="max-w-7xl mx-auto px-6 py-8 flex-grow space-y-8 w-full">
+      
+      <!-- STATS OVERVIEW -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-xs">
+        <div class="fm-card p-5 space-y-1">
+          <span class="text-[#64748b] block text-[10px] uppercase font-bold">TOTAL INQUIRIES</span>
+          <div class="text-3xl font-bold text-white" id="stat-total">0</div>
+          <span class="text-[#94a3b8] text-[10px]">All Recorded Fixtures</span>
+        </div>
+        <div class="fm-card p-5 space-y-1 border-[#00a8ff]/30">
+          <span class="text-[#64748b] block text-[10px] uppercase font-bold">PENDING REVIEW</span>
+          <div class="text-3xl font-bold text-[#00a8ff]" id="stat-pending">0</div>
+          <span class="text-[#94a3b8] text-[10px]">&lt; 2hr Response Target</span>
+        </div>
+        <div class="fm-card p-5 space-y-1">
+          <span class="text-[#64748b] block text-[10px] uppercase font-bold">ACTIVE QUOTES</span>
+          <div class="text-3xl font-bold text-amber-400" id="stat-active">0</div>
+          <span class="text-[#94a3b8] text-[10px]">Matching & Quoted</span>
+        </div>
+        <div class="fm-card p-5 space-y-1">
+          <span class="text-[#64748b] block text-[10px] uppercase font-bold">ACCEPTED VOYAGES</span>
+          <div class="text-3xl font-bold text-[#00d084]" id="stat-accepted">0</div>
+          <span class="text-[#94a3b8] text-[10px]">Confirmed Bookings</span>
+        </div>
+      </div>
+
+      <!-- FILTER & SEARCH BAR -->
+      <div class="fm-card p-4 flex flex-wrap items-center justify-between gap-4 font-mono text-xs">
+        <div class="flex items-center space-x-3 flex-grow max-w-md">
+          <i data-lucide="search" class="w-4 h-4 text-[#94a3b8]"></i>
+          <input 
+            type="text" 
+            id="search-input" 
+            oninput="renderInquiriesTable()"
+            placeholder="Search by ID, name, email, commodity, load port..." 
+            class="fm-input py-2"
+          />
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <span class="text-[#64748b] uppercase text-[10px]">Status:</span>
+          <select id="filter-status" onchange="renderInquiriesTable()" class="fm-input py-2 w-44">
+            <option value="ALL">All Statuses</option>
+            <option value="PENDING">PENDING</option>
+            <option value="UNDER REVIEW">UNDER REVIEW</option>
+            <option value="VESSEL MATCHING">VESSEL MATCHING</option>
+            <option value="QUOTATION SENT">QUOTATION SENT</option>
+            <option value="ACCEPTED">ACCEPTED</option>
+            <option value="REJECTED">REJECTED</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- INQUIRIES TABLE -->
+      <div class="fm-card overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left font-mono text-xs divide-y divide-white/5">
+            <thead class="bg-[#0a0b0d] text-[#64748b] uppercase text-[10px] tracking-wider">
+              <tr>
+                <th class="py-3.5 px-4">Inquiry ID</th>
+                <th class="py-3.5 px-4">Customer</th>
+                <th class="py-3.5 px-4">Commodity</th>
+                <th class="py-3.5 px-4">Parcel</th>
+                <th class="py-3.5 px-4">Route</th>
+                <th class="py-3.5 px-4">Submitted</th>
+                <th class="py-3.5 px-4">Status</th>
+                <th class="py-3.5 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inquiries-tbody" class="divide-y divide-white/5 text-slate-300">
+              <tr>
+                <td colspan="8" class="py-8 text-center text-[#64748b]">Loading inquiries...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- INSPECT MODAL -->
+  <div id="details-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+    <div class="bg-[#121418] border border-white/20 rounded-3xl max-w-2xl w-full p-8 space-y-6 relative shadow-2xl font-mono text-xs">
+      <button onclick="closeDetailsModal()" class="absolute top-6 right-6 text-[#94a3b8] hover:text-white w-8 h-8 rounded-full border border-white/10 flex items-center justify-center">✕</button>
+      
+      <div class="space-y-1">
+        <span class="text-[#00a8ff] text-[10px] uppercase tracking-widest font-bold">Charter Inquiry Dossier</span>
+        <h3 class="font-syne font-bold text-2xl text-white" id="modal-inquiry-id">FW-2026-000000</h3>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="p-3.5 bg-[#080808] rounded-xl border border-white/5 space-y-1">
+          <span class="text-[#64748b] block text-[10px] uppercase">Customer Name</span>
+          <span class="text-white font-bold text-sm" id="modal-name">—</span>
+        </div>
+        <div class="p-3.5 bg-[#080808] rounded-xl border border-white/5 space-y-1">
+          <span class="text-[#64748b] block text-[10px] uppercase">Corporate Email</span>
+          <a href="#" id="modal-email" class="text-[#00a8ff] font-bold text-sm hover:underline block truncate">—</a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3">
+        <div class="p-3 bg-[#080808] rounded-xl border border-white/5">
+          <span class="text-[#64748b] block text-[10px]">COMMODITY</span>
+          <span class="text-white font-bold" id="modal-commodity">—</span>
+        </div>
+        <div class="p-3 bg-[#080808] rounded-xl border border-white/5">
+          <span class="text-[#64748b] block text-[10px]">PARCEL SIZE</span>
+          <span class="text-[#00d084] font-bold" id="modal-parcel">—</span>
+        </div>
+        <div class="p-3 bg-[#080808] rounded-xl border border-white/5">
+          <span class="text-[#64748b] block text-[10px]">SUBMISSION TIME</span>
+          <span class="text-white" id="modal-time">—</span>
+        </div>
+      </div>
+
+      <div class="p-3.5 bg-[#080808] rounded-xl border border-white/5 space-y-1">
+        <span class="text-[#64748b] block text-[10px] uppercase">VOYAGE CORRIDOR</span>
+        <div class="text-white font-bold" id="modal-route">—</div>
+      </div>
+
+      <div class="p-3.5 bg-[#080808] rounded-xl border border-white/5 space-y-1">
+        <span class="text-[#64748b] block text-[10px] uppercase">VOYAGE NOTES / LAYCAN</span>
+        <div class="text-slate-300 whitespace-pre-wrap text-[11px]" id="modal-notes">—</div>
+      </div>
+
+      <div class="pt-2 flex items-center justify-between border-t border-white/10">
+        <div class="flex items-center space-x-2">
+          <span class="text-[#64748b]">Update Status:</span>
+          <select id="modal-status-select" class="fm-input py-1.5 px-3 w-48 text-xs">
+            <option value="PENDING">PENDING</option>
+            <option value="UNDER REVIEW">UNDER REVIEW</option>
+            <option value="VESSEL MATCHING">VESSEL MATCHING</option>
+            <option value="QUOTATION SENT">QUOTATION SENT</option>
+            <option value="ACCEPTED">ACCEPTED</option>
+            <option value="REJECTED">REJECTED</option>
+          </select>
+        </div>
+        <button onclick="saveModalStatus()" class="btn-pill-white font-mono text-xs uppercase font-bold">
+          Save Status
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN SCRIPTS -->
+  <script>
+    let allInquiries = [];
+    let currentInquiry = null;
+
+    function getStoredToken() {
+      return localStorage.getItem("fw_admin_token") || "";
+    }
+
+    function setStoredToken(token) {
+      localStorage.setItem("fw_admin_token", token);
+    }
+
+    async function handleAdminLogin(e) {
+      if (e) e.preventDefault();
+      const token = document.getElementById("admin-token-input").value.trim();
+      if (!token) return;
+
+      try {
+        const res = await fetch("/api/v1/charter/admin/ping", {
+          headers: { "x-admin-token": token }
+        });
+        if (res.ok) {
+          setStoredToken(token);
+          document.getElementById("auth-modal").classList.add("hidden");
+          document.getElementById("admin-app").classList.remove("hidden");
+          document.getElementById("admin-app").classList.add("flex");
+          fetchInquiries();
+        } else {
+          document.getElementById("auth-error").classList.remove("hidden");
+        }
+      } catch (err) {
+        document.getElementById("auth-error").classList.remove("hidden");
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem("fw_admin_token");
+      location.reload();
+    }
+
+    async function fetchInquiries() {
+      const token = getStoredToken();
+      if (!token) return;
+
+      try {
+        const res = await fetch("/api/v1/charter/admin/inquiries", {
+          headers: { "x-admin-token": token }
+        });
+        if (res.status === 401) {
+          handleLogout();
+          return;
+        }
+        const data = await res.json();
+        allInquiries = data.inquiries || [];
+        updateStats();
+        renderInquiriesTable();
+      } catch (err) {
+        console.error("Failed to fetch inquiries", err);
+      }
+    }
+
+    function updateStats() {
+      document.getElementById("stat-total").innerText = allInquiries.length;
+      document.getElementById("stat-pending").innerText = allInquiries.filter(i => i.status === "PENDING").length;
+      document.getElementById("stat-active").innerText = allInquiries.filter(i => ["UNDER REVIEW", "VESSEL MATCHING", "QUOTATION SENT"].includes(i.status)).length;
+      document.getElementById("stat-accepted").innerText = allInquiries.filter(i => i.status === "ACCEPTED").length;
+    }
+
+    function getStatusBadge(status) {
+      switch (status) {
+        case "PENDING":
+          return `<span class="badge-pill badge-blue">● PENDING</span>`;
+        case "UNDER REVIEW":
+          return `<span class="badge-pill" style="background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3)">UNDER REVIEW</span>`;
+        case "VESSEL MATCHING":
+          return `<span class="badge-pill" style="background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3)">VESSEL MATCHING</span>`;
+        case "QUOTATION SENT":
+          return `<span class="badge-pill" style="background: rgba(14,165,233,0.15); color: #38bdf8; border: 1px solid rgba(14,165,233,0.3)">QUOTATION SENT</span>`;
+        case "ACCEPTED":
+          return `<span class="badge-pill badge-emerald">ACCEPTED</span>`;
+        case "REJECTED":
+          return `<span class="badge-pill" style="background: rgba(244,63,94,0.15); color: #fb7185; border: 1px solid rgba(244,63,94,0.3)">REJECTED</span>`;
+        default:
+          return `<span class="badge-pill badge-outline">${status}</span>`;
+      }
+    }
+
+    function renderInquiriesTable() {
+      const q = (document.getElementById("search-input").value || "").toLowerCase();
+      const statusFilter = document.getElementById("filter-status").value;
+
+      const filtered = allInquiries.filter(item => {
+        const matchesStatus = statusFilter === "ALL" || item.status === statusFilter;
+        const matchesQuery = !q || 
+          (item.inquiry_id && item.inquiry_id.toLowerCase().includes(q)) ||
+          (item.first_name && item.first_name.toLowerCase().includes(q)) ||
+          (item.last_name && item.last_name.toLowerCase().includes(q)) ||
+          (item.email && item.email.toLowerCase().includes(q)) ||
+          (item.commodity && item.commodity.toLowerCase().includes(q)) ||
+          (item.load_port && item.load_port.toLowerCase().includes(q)) ||
+          (item.discharge_port && item.discharge_port.toLowerCase().includes(q));
+        return matchesStatus && matchesQuery;
+      });
+
+      const tbody = document.getElementById("inquiries-tbody");
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="py-12 text-center text-[#64748b]">No charter inquiries found matching criteria.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => `
+        <tr class="hover:bg-white/[0.02] transition-colors cursor-pointer" onclick="openDetailsModal('${item.inquiry_id}')">
+          <td class="py-3.5 px-4 font-bold text-white">${item.inquiry_id}</td>
+          <td class="py-3.5 px-4">
+            <div class="font-bold text-white">${item.first_name} ${item.last_name}</div>
+            <div class="text-[#64748b] text-[10px]">${item.email}</div>
+          </td>
+          <td class="py-3.5 px-4 text-[#00a8ff]">${item.commodity}</td>
+          <td class="py-3.5 px-4 font-bold text-white">${Number(item.parcel_mt).toLocaleString()} MT</td>
+          <td class="py-3.5 px-4 text-[#94a3b8]">${item.load_port} → ${item.discharge_port}</td>
+          <td class="py-3.5 px-4 text-[#64748b]">${new Date(item.created_at).toLocaleString()}</td>
+          <td class="py-3.5 px-4">${getStatusBadge(item.status)}</td>
+          <td class="py-3.5 px-4 text-right" onclick="event.stopPropagation()">
+            <select 
+              onchange="changeStatus('${item.inquiry_id}', this.value)" 
+              class="fm-input py-1 px-2 text-[11px] w-36"
+            >
+              <option value="PENDING" ${item.status === 'PENDING' ? 'selected' : ''}>PENDING</option>
+              <option value="UNDER REVIEW" ${item.status === 'UNDER REVIEW' ? 'selected' : ''}>UNDER REVIEW</option>
+              <option value="VESSEL MATCHING" ${item.status === 'VESSEL MATCHING' ? 'selected' : ''}>VESSEL MATCHING</option>
+              <option value="QUOTATION SENT" ${item.status === 'QUOTATION SENT' ? 'selected' : ''}>QUOTATION SENT</option>
+              <option value="ACCEPTED" ${item.status === 'ACCEPTED' ? 'selected' : ''}>ACCEPTED</option>
+              <option value="REJECTED" ${item.status === 'REJECTED' ? 'selected' : ''}>REJECTED</option>
+            </select>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function changeStatus(inquiryId, newStatus) {
+      const token = getStoredToken();
+      try {
+        const res = await fetch(`/api/v1/charter/admin/inquiries/${inquiryId}/status`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-token": token
+          },
+          body: JSON.stringify({ status: newStatus })
+        });
+        if (res.ok) {
+          const idx = allInquiries.findIndex(i => i.inquiry_id === inquiryId);
+          if (idx !== -1) allInquiries[idx].status = newStatus;
+          updateStats();
+          renderInquiriesTable();
+        }
+      } catch (err) {
+        console.error("Failed to update status", err);
+      }
+    }
+
+    function openDetailsModal(inquiryId) {
+      const item = allInquiries.find(i => i.inquiry_id === inquiryId);
+      if (!item) return;
+      currentInquiry = item;
+
+      document.getElementById("modal-inquiry-id").innerText = item.inquiry_id;
+      document.getElementById("modal-name").innerText = `${item.first_name} ${item.last_name}`;
+      document.getElementById("modal-email").innerText = item.email;
+      document.getElementById("modal-email").href = `mailto:${item.email}`;
+      document.getElementById("modal-commodity").innerText = item.commodity;
+      document.getElementById("modal-parcel").innerText = `${Number(item.parcel_mt).toLocaleString()} MT`;
+      document.getElementById("modal-time").innerText = new Date(item.created_at).toLocaleString();
+      document.getElementById("modal-route").innerText = `${item.load_port} ➔ ${item.discharge_port}`;
+      document.getElementById("modal-notes").innerText = item.voyage_notes || 'No special instructions provided.';
+      document.getElementById("modal-status-select").value = item.status;
+
+      document.getElementById("details-modal").classList.remove("hidden");
+      document.getElementById("details-modal").classList.add("flex");
+    }
+
+    function closeDetailsModal() {
+      document.getElementById("details-modal").classList.add("hidden");
+      document.getElementById("details-modal").classList.remove("flex");
+    }
+
+    async function saveModalStatus() {
+      if (!currentInquiry) return;
+      const newStatus = document.getElementById("modal-status-select").value;
+      await changeStatus(currentInquiry.inquiry_id, newStatus);
+      closeDetailsModal();
+    }
+
+    // Auto-login check on page load
+    window.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      const token = getStoredToken();
+      if (token) {
+        document.getElementById("admin-token-input").value = token;
+        handleAdminLogin();
+      }
+    });
+  </script>
+</body>
+</html>

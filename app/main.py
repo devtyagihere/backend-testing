@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
 from app.core.config import settings
 from app.api.routes import router as api_router
+from app.api.charter_routes import charter_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -21,8 +22,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include API Router
+# Include API Routers
 app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(charter_router, prefix=settings.API_V1_STR)
 
 # Serve Frontend static directory
 static_dir = os.path.join(os.path.dirname(__file__), "static")
@@ -44,6 +46,14 @@ def serve_sail_portal_ui():
     if os.path.exists(portal_file):
         return FileResponse(portal_file)
     return {"message": "SAIL Portal workspace page not found."}
+
+@app.get("/admin")
+def serve_admin_ui():
+    """FreightWaves Admin Dashboard — Charter Inquiry Management"""
+    admin_file = os.path.join(os.path.dirname(__file__), "static", "admin.html")
+    if os.path.exists(admin_file):
+        return FileResponse(admin_file)
+    return {"message": "Admin dashboard page not found."}
 
 @app.get("/oris")
 def redirect_oris_to_home():
