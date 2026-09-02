@@ -1,14 +1,33 @@
-﻿/* FreightIQ — Premium Luminous Dark Theme */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+/* ==========================================================================
+   FreightWaves SONAR — Enterprise Freight Forecasting & Intelligence Theme
+   SIH26006: SAIL & Ministry of Steel Bulk Cargo Procurement Platform
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg-main: #060913;
-  --bg-card: rgba(14, 21, 37, 0.75);
-  --bg-card-hover: rgba(19, 29, 51, 0.85);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-accent: rgba(56, 189, 248, 0.3);
-  --glow-cyan: rgba(14, 165, 233, 0.25);
-  --glow-emerald: rgba(16, 185, 129, 0.25);
+  --fw-dark-bg: #0b1118;
+  --fw-navy-bg: #111a24;
+  --fw-card-bg: rgba(19, 29, 41, 0.78);
+  --fw-card-border: rgba(255, 255, 255, 0.08);
+  --fw-card-hover: rgba(26, 39, 56, 0.9);
+  
+  --fw-blue-primary: #0278ff;
+  --fw-blue-deep: #0056b3;
+  --fw-blue-glow: rgba(2, 120, 255, 0.28);
+  
+  --fw-cyan: #00c2ff;
+  --fw-cyan-glow: rgba(0, 194, 255, 0.25);
+  
+  --fw-emerald: #00d084;
+  --fw-emerald-glow: rgba(0, 208, 132, 0.22);
+  
+  --fw-rose: #f43f5e;
+  --fw-amber: #f59e0b;
+  
+  --fw-text-main: #f8fafc;
+  --fw-text-muted: #94a3b8;
+  --fw-text-dim: #64748b;
 }
 
 * {
@@ -18,236 +37,362 @@
 }
 
 body {
-  background-color: var(--bg-main);
+  background-color: var(--fw-dark-bg);
   background-image: 
-    radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.06) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.04) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(2, 120, 255, 0.09) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(0, 194, 255, 0.06) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(0, 208, 132, 0.04) 0px, transparent 50%);
   background-attachment: fixed;
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  color: #f8fafc;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  color: var(--fw-text-main);
+  overflow-x: hidden;
 }
 
 .mono {
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #060913; }
+/* Custom Scrollbars */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0b1118; }
 ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #334155; }
 
-/* Glassmorphism Cards */
-.glass-panel {
-  background: var(--bg-card);
+/* ── FreightWaves Top Multi-Brand Bar ────────────────────────────── */
+.fw-topbar {
+  background: #06090e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.brand-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #94a3b8;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.brand-tab:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.brand-tab.active {
+  color: #ffffff;
+  border-bottom-color: var(--fw-blue-primary);
+  background: rgba(2, 120, 255, 0.08);
+}
+
+/* ── Live Market Ticker Tape ─────────────────────────────────────── */
+.ticker-container {
+  background: #090e15;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+}
+
+.ticker-track {
+  display: inline-flex;
+  animation: tickerSlide 45s linear infinite;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes tickerSlide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 20px;
+  font-size: 0.75rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ticker-label {
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+}
+
+.ticker-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.ticker-badge-up {
+  color: #00d084;
+  background: rgba(0, 208, 132, 0.12);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.ticker-badge-down {
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.12);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+/* ── FreightWaves Main Navbar ────────────────────────────────────── */
+.fw-main-header {
+  background: rgba(11, 17, 24, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fw-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #94a3b8;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.fw-nav-link:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.fw-nav-link.active {
+  color: #ffffff;
+  background: rgba(2, 120, 255, 0.15);
+  border-color: rgba(2, 120, 255, 0.35);
+  box-shadow: 0 0 16px var(--fw-blue-glow);
+}
+
+/* ── Glassmorphic & FreightWaves Panels ─────────────────────────── */
+.fw-card {
+  background: var(--fw-card-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--fw-card-border);
   border-radius: 14px;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.glass-panel:hover {
+.fw-card:hover {
   border-color: rgba(255, 255, 255, 0.14);
 }
 
-.glass-card-interactive {
-  background: var(--bg-card);
+.fw-card-interactive {
+  background: var(--fw-card-bg);
   backdrop-filter: blur(16px);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--fw-card-border);
   border-radius: 14px;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.glass-card-interactive:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--border-accent);
+.fw-card-interactive:hover {
+  background: var(--fw-card-hover);
+  border-color: rgba(2, 120, 255, 0.4);
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px -10px var(--glow-cyan);
+  box-shadow: 0 12px 30px -10px var(--fw-blue-glow);
 }
 
-/* Nav Link Styling */
-.nav-tab {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 14px;
-  border-radius: 8px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #94a3b8;
-  background: transparent;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.fw-card-glow-blue {
+  box-shadow: 0 0 25px -5px var(--fw-blue-glow);
+  border-color: rgba(2, 120, 255, 0.3);
 }
 
-.nav-tab:hover {
-  color: #f8fafc;
-  background: rgba(255, 255, 255, 0.05);
+.fw-card-glow-emerald {
+  box-shadow: 0 0 25px -5px var(--fw-emerald-glow);
+  border-color: rgba(0, 208, 132, 0.3);
 }
 
-.nav-tab.active {
-  color: #38bdf8 !important;
-  background: rgba(14, 165, 233, 0.12) !important;
-  border-color: rgba(56, 189, 248, 0.3) !important;
-  box-shadow: 0 0 16px rgba(14, 165, 233, 0.15);
-}
-
-/* Custom Glow Badges */
-.badge-pill {
+/* ── Badges & Status Indicators ──────────────────────────────────── */
+.fw-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
   padding: 3px 9px;
   border-radius: 9999px;
-  text-transform: uppercase;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
-.badge-cyan {
-  background: rgba(14, 165, 233, 0.14);
+.fw-badge-blue {
+  color: #60a5fa;
+  background: rgba(2, 120, 255, 0.14);
+  border: 1px solid rgba(2, 120, 255, 0.3);
+}
+
+.fw-badge-cyan {
   color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  box-shadow: 0 0 12px rgba(14, 165, 233, 0.15);
+  background: rgba(0, 194, 255, 0.14);
+  border: 1px solid rgba(0, 194, 255, 0.3);
 }
 
-.badge-emerald {
-  background: rgba(16, 185, 129, 0.14);
+.fw-badge-emerald {
   color: #34d399;
-  border: 1px solid rgba(52, 211, 153, 0.35);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
+  background: rgba(0, 208, 132, 0.14);
+  border: 1px solid rgba(0, 208, 132, 0.3);
 }
 
-.badge-amber {
-  background: rgba(245, 158, 11, 0.14);
+.fw-badge-amber {
   color: #fbbf24;
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
-.badge-rose {
-  background: rgba(244, 63, 94, 0.14);
+.fw-badge-rose {
   color: #fb7185;
-  border: 1px solid rgba(251, 113, 133, 0.35);
+  background: rgba(244, 63, 94, 0.14);
+  border: 1px solid rgba(244, 63, 94, 0.3);
 }
 
-.badge-slate {
-  background: rgba(148, 163, 184, 0.1);
-  color: #cbd5e1;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+/* ── Decision Banner Styles ──────────────────────────────────────── */
+.decision-banner-book {
+  background: linear-gradient(135deg, rgba(0, 208, 132, 0.15) 0%, rgba(11, 17, 24, 0.95) 100%);
+  border: 1px solid rgba(0, 208, 132, 0.4);
+  box-shadow: 0 0 30px -5px var(--fw-emerald-glow);
 }
 
-/* Modern Input Controls */
-.input-control {
-  background: rgba(10, 15, 29, 0.85);
+.decision-banner-wait {
+  background: linear-gradient(135deg, rgba(2, 120, 255, 0.16) 0%, rgba(11, 17, 24, 0.95) 100%);
+  border: 1px solid rgba(2, 120, 255, 0.4);
+  box-shadow: 0 0 30px -5px var(--fw-blue-glow);
+}
+
+/* ── Live Blinking Indicator ─────────────────────────────────────── */
+.animate-pulse-live {
+  animation: liveBlink 1.8s ease-in-out infinite;
+}
+
+@keyframes liveBlink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.15); }
+}
+
+/* ── Groq AI Executive Box ───────────────────────────────────────── */
+.ai-memo-box {
+  background: linear-gradient(180deg, rgba(17, 26, 36, 0.9) 0%, rgba(11, 17, 24, 0.95) 100%);
+  border: 1px solid rgba(0, 194, 255, 0.25);
+  border-left: 4px solid var(--fw-cyan);
+  box-shadow: 0 8px 24px -6px var(--fw-cyan-glow);
+}
+
+/* ── Form Inputs ─────────────────────────────────────────────────── */
+.fw-input {
+  width: 100%;
+  background: rgba(15, 23, 33, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  color: #f8fafc;
-  font-size: 0.8125rem;
   padding: 8px 12px;
-  width: 100%;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 500;
   outline: none;
   transition: all 0.2s ease;
 }
 
-.input-control:focus {
-  border-color: #38bdf8;
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+.fw-input:focus {
+  border-color: var(--fw-blue-primary);
+  box-shadow: 0 0 0 3px rgba(2, 120, 255, 0.2);
 }
 
-/* Sleek Buttons */
-.btn-gradient-primary {
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
-  color: #ffffff;
+.fw-label {
+  display: block;
+  font-size: 0.75rem;
   font-weight: 700;
-  font-size: 0.8125rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  padding: 9px 18px;
-  cursor: pointer;
+  color: #94a3b8;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* ── Primary CTA Buttons ─────────────────────────────────────────── */
+.fw-btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 8px;
+  background: linear-gradient(135deg, #0278ff 0%, #0056b3 100%);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  box-shadow: 0 4px 14px var(--fw-blue-glow);
   transition: all 0.2s ease;
-  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.35);
 }
 
-.btn-gradient-primary:hover {
-  background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
-  box-shadow: 0 6px 22px rgba(2, 132, 199, 0.5);
+.fw-btn-primary:hover {
+  background: linear-gradient(135deg, #1d88ff 0%, #0266cc 100%);
+  box-shadow: 0 6px 20px rgba(2, 120, 255, 0.45);
   transform: translateY(-1px);
 }
 
-.btn-subtle {
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #cbd5e1;
-  font-weight: 600;
-  font-size: 0.8125rem;
-  border-radius: 8px;
-  padding: 8px 16px;
-  cursor: pointer;
+.fw-btn-secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.btn-subtle:hover {
-  background: rgba(30, 41, 59, 0.9);
+.fw-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Toast Notifications ─────────────────────────────────────────── */
+.toast-item {
+  background: #111a24;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 12px 16px;
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.2);
+  font-size: 0.8125rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
 }
 
-/* Custom Range Slider */
-input[type=range] {
-  -webkit-appearance: none;
-  width: 100%;
-  background: transparent;
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
-input[type=range]:focus {
-  outline: none;
-}
-
-input[type=range]::-webkit-slider-runnable-track {
-  width: 100%;
-  height: 6px;
-  cursor: pointer;
-  background: #1e293b;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-input[type=range]::-webkit-slider-thumb {
-  height: 18px;
-  width: 18px;
-  border-radius: 50%;
-  background: #38bdf8;
-  border: 2px solid #060913;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
-  cursor: pointer;
-  -webkit-appearance: none;
-  margin-top: -6px;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-input[type=range]::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.9);
-}
-
-/* Print Styles */
-@media print {
-  body * { visibility: hidden !important; }
-  #modal-memo, #modal-memo * { visibility: visible !important; }
-  #modal-memo { position: fixed; inset: 0; background: white !important; color: #0f172a !important; padding: 30px; }
-  #modal-memo button { display: none !important; }
+@keyframes fadeOut {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.95); }
 }
