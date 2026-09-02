@@ -1,4 +1,4 @@
-﻿import os
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -35,3 +35,11 @@ def serve_ui():
     if os.path.exists(index_file):
         return FileResponse(index_file)
     return {"message": "Welcome to SAIL Freight Forecasting API. Navigate to /docs for Swagger UI."}
+
+@app.get("/oris")
+def serve_oris_ui():
+    oris_file = os.path.join(os.path.dirname(__file__), "static", "oris.html")
+    if os.path.exists(oris_file):
+        return FileResponse(oris_file)
+    return {"message": "Oris Maritime page not found."}
+
