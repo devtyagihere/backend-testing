@@ -294,6 +294,22 @@ def send_customer_confirmation(inquiry: dict) -> bool:
         if resp.status_code in (200, 201):
             logger.info("Customer confirmation email sent to %s", inquiry.get("email"))
             return True
+        elif resp.status_code == 403 and "testing emails" in resp.text:
+            # Resend Sandbox mode: fallback send customer confirmation copy to owner
+            logger.warning("Resend in Sandbox mode. Forwarding customer confirmation copy to owner (%s).", settings.OWNER_EMAIL)
+            sandbox_payload = {
+                "from": "FreightWaves <onboarding@resend.dev>",
+                "to": [settings.OWNER_EMAIL],
+                "subject": f"[Customer Copy] We Received Your Charter Inquiry | {inquiry_id} (For: {inquiry.get('email')})",
+                "html": f"<p style='color:#f59e0b; font-family:sans-serif;'><strong>[SANDBOX NOTICE]</strong> This confirmation was addressed to <strong>{inquiry.get('email')}</strong>, forwarded to you because your Resend account is in test mode (verify domain at resend.com to deliver directly to customers).</p>" + html_body
+            }
+            fb_resp = httpx.post(
+                "https://api.resend.com/emails",
+                json=sandbox_payload,
+                headers={"Authorization": f"Bearer {settings.RESEND_API_KEY}", "Content-Type": "application/json"},
+                timeout=15
+            )
+            return fb_resp.status_code in (200, 201)
         else:
             logger.error("Resend customer email failed: %s — %s", resp.status_code, resp.text)
             return False

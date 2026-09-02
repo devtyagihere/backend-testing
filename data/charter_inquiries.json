@@ -1,5 +1,18 @@
 [
   {
+    "inquiry_id": "FW-2026-081641",
+    "first_name": "sivant",
+    "last_name": "raj",
+    "email": "sivantraj.hs@gmail.com",
+    "commodity": "Dry Bulk / Coking Coal / Ore",
+    "parcel_mt": 10000.0,
+    "load_port": "augusta",
+    "discharge_port": "paradip",
+    "voyage_notes": "",
+    "status": "PENDING",
+    "created_at": "2026-09-02T20:20:40.107806+00:00"
+  },
+  {
     "inquiry_id": "FW-2026-441758",
     "first_name": "Aarav",
     "last_name": "Mehta",
