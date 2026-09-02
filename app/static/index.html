@@ -1,851 +1,1102 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Freight Forecasting & Intelligence | FreightWaves SONAR — SAIL & Ministry of Steel (SIH26006)</title>
+  <title>FREIGHT MARITIME — Reliable Shipping. Global Routes. Trusted Performance.</title>
+  
+  <!-- Fonts: Syne, Space Grotesk, Inter, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      darkMode: 'class',
       theme: {
         extend: {
           colors: {
-            fw: {
-              blue: '#0278ff',
-              navy: '#111a24',
-              dark: '#0b1118',
-              cyan: '#00c2ff',
-              emerald: '#00d084'
+            fm: {
+              pitch: '#080808',
+              dark: '#0a0b0d',
+              surface: '#121418',
+              card: '#16181e',
+              border: 'rgba(255, 255, 255, 0.08)',
+              blue: '#00a8ff',
+              steel: '#94a3b8'
             }
+          },
+          fontFamily: {
+            syne: ['Syne', 'sans-serif'],
+            space: ['Space Grotesk', 'sans-serif'],
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
           }
         }
       }
     }
   </script>
   
-  <!-- Chart.js & Lucide Icons -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- React 18, ReactDOM, Babel, Framer Motion -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+  
+  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   
-  <!-- FreightWaves Theme Stylesheet -->
+  <!-- Stylesheet -->
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body class="min-h-screen flex flex-col antialiased bg-[#0b1118] text-slate-100">
-  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+<body class="bg-[#080808] text-white grid-overlay">
+  <div id="root"></div>
 
-  <!-- 1. FREIGHTWAVES MULTI-BRAND UTILITY TOPBAR -->
-  <aside aria-label="FreightWaves Brands" class="fw-topbar hidden md:block">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-9">
+  <!-- React Application -->
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { motion, AnimatePresence } = window.Motion || {
+      motion: {
+        div: ({ children, className, onClick, ...props }) => <div className={className} onClick={onClick}>{children}</div>,
+        section: ({ children, className, ...props }) => <section className={className}>{children}</section>,
+      },
+      AnimatePresence: ({ children }) => <>{children}</>
+    };
+
+    // Fleet Dataset under Freight Maritime
+    const FLEET_DATA = [
+      {
+        id: "fm-synergy",
+        name: "Freight Synergy",
+        type: "Chemical / Oil Products Tanker",
+        category: "chemical",
+        dwt: "9,680 MT",
+        loa: "119.80 m",
+        beam: "18.20 m",
+        draft: "7.80 m",
+        imo: "9374284",
+        flag: "Panama",
+        year: "2018",
+        status: "Underway",
+        destination: "Marmara / Istanbul",
+        speed: "11.8 kn",
+        image: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: "fm-trinity",
+        name: "Freight Trinity",
+        type: "Oil Products Tanker",
+        category: "product",
+        dwt: "9,672 MT",
+        loa: "119.80 m",
+        beam: "18.20 m",
+        draft: "7.80 m",
+        imo: "9381926",
+        flag: "Liberia",
+        year: "2019",
+        status: "In port",
+        destination: "Alexandria, Egypt",
+        speed: "0.0 kn",
+        image: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: "fm-helga",
+        name: "Freight Helga",
+        type: "Chemical / Products Tanker",
+        category: "chemical",
+        dwt: "7,450 MT",
+        loa: "115.50 m",
+        beam: "17.60 m",
+        draft: "7.20 m",
+        imo: "9421832",
+        flag: "Malta",
+        year: "2020",
+        status: "At anchor",
+        destination: "Augusta, Italy",
+        speed: "0.1 kn",
+        image: "https://images.unsplash.com/photo-1505705694340-019e1e335916?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: "fm-marine",
+        name: "Freight Marine",
+        type: "Oil Products / Biofuel Tanker",
+        category: "product",
+        dwt: "8,920 MT",
+        loa: "118.00 m",
+        beam: "17.80 m",
+        draft: "7.50 m",
+        imo: "9398412",
+        flag: "Panama",
+        year: "2019",
+        status: "Underway",
+        destination: "Limassol, Cyprus",
+        speed: "12.4 kn",
+        image: "https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: "fm-sofi",
+        name: "Freight Sofi",
+        type: "Chemical Tanker (Type II)",
+        category: "chemical",
+        dwt: "6,850 MT",
+        loa: "109.00 m",
+        beam: "16.80 m",
+        draft: "6.90 m",
+        imo: "9451290",
+        flag: "Liberia",
+        year: "2021",
+        status: "Underway",
+        destination: "Piraeus, Greece",
+        speed: "10.6 kn",
+        image: "https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: "fm-viktoria",
+        name: "Freight Viktoria",
+        type: "Clean Products Tanker",
+        category: "product",
+        dwt: "12,400 MT",
+        loa: "132.00 m",
+        beam: "20.40 m",
+        draft: "8.40 m",
+        imo: "9488102",
+        flag: "Marshall Islands",
+        year: "2022",
+        status: "In port",
+        destination: "Batumi, Georgia",
+        speed: "0.0 kn",
+        image: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80"
+      }
+    ];
+
+    const REGIONS_DATA = [
+      { name: "Mediterranean Sea", share: "50.4%", ports: "Genoa, Piraeus, Alexandria, Augusta, Limassol", color: "#00a8ff" },
+      { name: "Continental Europe", share: "16.8%", ports: "Rotterdam, Antwerp, Le Havre, Hamburg", color: "#38bdf8" },
+      { name: "Black Sea & Marmara", share: "13.3%", ports: "Batumi, Constanta, Varna, Istanbul", color: "#00d084" },
+      { name: "UAE Gulf & Middle East", share: "19.5%", ports: "Fujairah, Dubai, Ras Laffan, Jubail", color: "#f59e0b" }
+    ];
+
+    function FreightMaritimeApp() {
+      const [isQuoteOpen, setIsQuoteOpen] = useState(false);
+      const [activeFilter, setActiveFilter] = useState("all");
+      const [selectedVessel, setSelectedVessel] = useState(null);
+      const [activeRegion, setActiveRegion] = useState(REGIONS_DATA[0]);
       
-      <!-- Multi-Brand Tabs -->
-      <div class="flex items-center space-x-1">
-        <a href="javascript:void(0)" class="brand-tab active">
-          <span class="text-white font-black tracking-wider">FREIGHT<span class="text-[#0278ff]">WAVES</span></span>
-        </a>
-        <a href="javascript:void(0)" class="brand-tab">
-          <span class="text-cyan-400 font-extrabold tracking-widest">SONAR</span>
-        </a>
-        <a href="javascript:void(0)" class="brand-tab text-slate-400">
-          <span>American Shipper</span>
-        </a>
-        <a href="javascript:void(0)" class="brand-tab text-slate-400">
-          <span>Modern Shipper</span>
-        </a>
-        <a href="javascript:void(0)" class="brand-tab text-slate-400">
-          <span>Playbook</span>
-        </a>
-      </div>
+      const [quoteForm, setQuoteForm] = useState({
+        firstName: "",
+        lastName: "",
+        company: "",
+        email: "",
+        cargoType: "clean_petroleum",
+        quantityMt: "10000",
+        loadPort: "",
+        dischargePort: "",
+        laycan: "",
+        message: ""
+      });
+      const [quoteSuccess, setQuoteSuccess] = useState(false);
 
-      <!-- Top Right Utility Links -->
-      <div class="flex items-center space-x-4 text-xs font-semibold text-slate-300">
-        <a href="https://gosonar.com" target="_blank" class="hover:text-white transition-colors flex items-center space-x-1">
-          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse-live"></span>
-          <span>SONAR Demo</span>
-        </a>
-        <span class="text-slate-700">|</span>
-        <button onclick="toggleDropdown('scenarios-menu')" class="hover:text-white transition-colors cursor-pointer flex items-center space-x-1">
-          <i data-lucide="play" class="w-3 h-3 text-cyan-400"></i>
-          <span>Sample Scenarios</span>
-        </button>
-        <span class="text-slate-700">|</span>
-        <a href="#groq-ai-memo-section" class="hover:text-white transition-colors flex items-center space-x-1">
-          <i data-lucide="sparkles" class="w-3 h-3 text-emerald-400"></i>
-          <span>AI Decision Memo</span>
-        </a>
-        <span class="text-slate-700">|</span>
-        <div class="flex items-center space-x-1.5 text-rose-400 font-bold">
-          <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse-live"></span>
-          <span>LIVE MARKET</span>
-        </div>
-      </div>
+      useEffect(() => {
+        if (window.lucide) {
+          lucide.createIcons();
+        }
+      }, [selectedVessel, isQuoteOpen, activeFilter]);
 
-    </div>
-  </aside>
+      const filteredFleet = activeFilter === "all" 
+        ? FLEET_DATA 
+        : FLEET_DATA.filter(v => v.category === activeFilter);
 
-  <!-- 2. STREAMING CONTINUOUS MARKET TICKER TAPE -->
-  <section aria-label="Live Market Ticker" class="ticker-container py-1.5">
-    <div class="ticker-track">
-      <!-- Item 1: BDI -->
-      <div class="ticker-item">
-        <span class="ticker-label">Baltic Dry Index (BDI):</span>
-        <span class="ticker-val" id="ticker-bdi">1,842</span>
-        <span class="ticker-badge-up">▲ +1.4%</span>
-      </div>
-      <!-- Item 2: Capesize TCE -->
-      <div class="ticker-item">
-        <span class="ticker-label">Capesize 180k TCE:</span>
-        <span class="ticker-val" id="ticker-cape">$26,450/d</span>
-        <span class="ticker-badge-up">▲ +2.8%</span>
-      </div>
-      <!-- Item 3: Panamax TCE -->
-      <div class="ticker-item">
-        <span class="ticker-label">Panamax 75k TCE:</span>
-        <span class="ticker-val" id="ticker-panamax">$15,820/d</span>
-        <span class="ticker-badge-down">▼ -0.6%</span>
-      </div>
-      <!-- Item 4: EIA Brent Crude -->
-      <div class="ticker-item">
-        <span class="ticker-label">EIA Brent Crude:</span>
-        <span class="ticker-val" id="ticker-brent">$74.85/bbl</span>
-        <span class="ticker-badge-up">▲ +0.9%</span>
-      </div>
-      <!-- Item 5: Singapore VLSFO -->
-      <div class="ticker-item">
-        <span class="ticker-label">Singapore VLSFO:</span>
-        <span class="ticker-val" id="ticker-vlsfo">$582.40/MT</span>
-        <span class="ticker-badge-up">▲ +$3.20</span>
-      </div>
-      <!-- Item 6: Alpha Vantage Copper -->
-      <div class="ticker-item">
-        <span class="ticker-label">LME Copper (AV):</span>
-        <span class="ticker-val" id="ticker-copper">$9,410/MT</span>
-        <span class="ticker-badge-up">▲ +1.1%</span>
-      </div>
-      <!-- Item 7: FRED USD/INR -->
-      <div class="ticker-item">
-        <span class="ticker-label">USD/INR (FRED):</span>
-        <span class="ticker-val" id="ticker-usdinr">₹83.94</span>
-        <span class="ticker-badge-down">▼ Stable</span>
-      </div>
-      <!-- Item 8: Paradip Queue -->
-      <div class="ticker-item">
-        <span class="ticker-label">Paradip Berth Queue:</span>
-        <span class="ticker-val" id="ticker-paradip">2.4 Days</span>
-        <span class="ticker-badge-up">Normal</span>
-      </div>
+      const handleQuoteSubmit = (e) => {
+        e.preventDefault();
+        setQuoteSuccess(true);
+        setTimeout(() => {
+          setQuoteSuccess(false);
+          setIsQuoteOpen(false);
+        }, 3000);
+      };
 
-      <!-- Duplicate items for seamless continuous ticker loop -->
-      <div class="ticker-item">
-        <span class="ticker-label">Baltic Dry Index (BDI):</span>
-        <span class="ticker-val">1,842</span>
-        <span class="ticker-badge-up">▲ +1.4%</span>
-      </div>
-      <div class="ticker-item">
-        <span class="ticker-label">Capesize 180k TCE:</span>
-        <span class="ticker-val">$26,450/d</span>
-        <span class="ticker-badge-up">▲ +2.8%</span>
-      </div>
-      <div class="ticker-item">
-        <span class="ticker-label">Panamax 75k TCE:</span>
-        <span class="ticker-val">$15,820/d</span>
-        <span class="ticker-badge-down">▼ -0.6%</span>
-      </div>
-      <div class="ticker-item">
-        <span class="ticker-label">EIA Brent Crude:</span>
-        <span class="ticker-val">$74.85/bbl</span>
-        <span class="ticker-badge-up">▲ +0.9%</span>
-      </div>
-      <div class="ticker-item">
-        <span class="ticker-label">Singapore VLSFO:</span>
-        <span class="ticker-val">$582.40/MT</span>
-        <span class="ticker-badge-up">▲ +$3.20</span>
-      </div>
-      <div class="ticker-item">
-        <span class="ticker-label">LME Copper (AV):</span>
-        <span class="ticker-val">$9,410/MT</span>
-        <span class="ticker-badge-up">▲ +1.1%</span>
-      </div>
-      <div class="ticker-item">
-        <span class="ticker-label">USD/INR (FRED):</span>
-        <span class="ticker-val">₹83.94</span>
-        <span class="ticker-badge-down">▼ Stable</span>
-      </div>
-      <div class="ticker-item">
-        <span class="ticker-label">Paradip Berth Queue:</span>
-        <span class="ticker-val">2.4 Days</span>
-        <span class="ticker-badge-up">Normal</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- 3. FREIGHTWAVES MAIN ENTERPRISE HEADER -->
-  <header class="fw-main-header sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
-      
-      <!-- Logo Branding -->
-      <div class="flex items-center space-x-3 cursor-pointer" onclick="navigateToTab('landing')">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0278ff] to-[#00c2ff] flex items-center justify-center font-black text-white shadow-lg shadow-[#0278ff]/30">
-          <i data-lucide="ship" class="w-5 h-5 text-white"></i>
-        </div>
-        <div>
-          <div class="flex items-center space-x-2">
-            <span class="font-black text-lg tracking-tight text-white">FREIGHT<span class="text-[#0278ff]">WAVES</span></span>
-            <span class="fw-badge fw-badge-cyan">SONAR FOR BULK</span>
-          </div>
-          <p class="text-[11px] text-slate-400 font-semibold tracking-wide">SAIL & Ministry of Steel · Intelligent Charter Decision Cockpit (SIH26006)</p>
-        </div>
-      </div>
-
-      <!-- Main Navigation Menu -->
-      <nav class="hidden lg:flex items-center space-x-1 bg-[#111a24]/90 p-1.5 rounded-xl border border-slate-700/60">
-        <button id="nav-landing" onclick="navigateToTab('landing')" class="fw-nav-link active">
-          <i data-lucide="compass" class="w-4 h-4"></i><span>Forecast Hub</span>
-        </button>
-        <button id="nav-optimizer" onclick="navigateToTab('optimizer')" class="fw-nav-link">
-          <i data-lucide="sliders" class="w-4 h-4"></i><span>Charter Optimizer</span>
-        </button>
-        <button id="nav-market" onclick="navigateToTab('market')" class="fw-nav-link">
-          <i data-lucide="activity" class="w-4 h-4"></i><span>Market Radar</span>
-        </button>
-        <button id="nav-backtest" onclick="navigateToTab('backtest')" class="fw-nav-link">
-          <i data-lucide="bar-chart-2" class="w-4 h-4"></i><span>Backtest Studio</span>
-        </button>
-        <button id="nav-ports" onclick="navigateToTab('ports')" class="fw-nav-link">
-          <i data-lucide="anchor" class="w-4 h-4"></i><span>Ports & Queues</span>
-        </button>
-      </nav>
-
-      <!-- Right Action Controls -->
-      <div class="flex items-center space-x-3">
-        
-        <!-- Scenarios Selector -->
-        <div class="relative">
-          <button id="btn-scenarios-dropdown" onclick="toggleDropdown('scenarios-menu')" class="fw-btn-primary text-xs py-2 px-3.5 cursor-pointer">
-            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i><span>Demos</span><i data-lucide="chevron-down" class="w-3 h-3"></i>
-          </button>
-          <div id="scenarios-menu" class="hidden absolute right-0 mt-2 w-84 bg-[#111a24] border border-slate-700/90 rounded-2xl shadow-2xl z-50 p-2 space-y-1.5 backdrop-blur-xl">
-            <div class="px-2.5 py-1.5 border-b border-slate-800 text-[10px] uppercase font-bold text-slate-400 flex items-center justify-between">
-              <span>Pre-Configured SAIL Routes</span>
-              <span class="text-cyan-400">Click to Load</span>
-            </div>
-            <div id="scenarios-list" class="space-y-1"></div>
-          </div>
-        </div>
-
-        <!-- Live Notifications -->
-        <div class="relative">
-          <button id="btn-notifications" onclick="toggleDropdown('notifications-panel')" class="w-9 h-9 rounded-xl bg-[#111a24] hover:bg-slate-800 border border-slate-700/80 flex items-center justify-center text-slate-300 hover:text-white transition-colors relative cursor-pointer">
-            <i data-lucide="bell" class="w-4 h-4"></i>
-            <span id="notif-badge" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white font-bold text-[9px] flex items-center justify-center">3</span>
-          </button>
-          <div id="notifications-panel" class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-[#111a24] border border-slate-700/80 rounded-2xl shadow-2xl z-50 p-3 backdrop-blur-xl">
-            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-              <span class="font-bold text-xs text-white flex items-center space-x-1.5"><i data-lucide="radio" class="w-3.5 h-3.5 text-cyan-400"></i><span>Freight Alert Feed</span></span>
-              <button onclick="markAllNotificationsRead()" class="text-[10px] text-cyan-400 hover:underline cursor-pointer">Mark all read</button>
-            </div>
-            <div id="notifications-list" class="divide-y divide-slate-800/80 max-h-64 overflow-y-auto my-2 pr-1 space-y-1"></div>
-          </div>
-        </div>
-
-        <!-- API Health Status Badge -->
-        <div id="system-health-pill" class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-live"></span>
-          <span>SONAR API ONLINE</span>
-        </div>
-
-      </div>
-
-    </div>
-  </header>
-
-  <!-- 4. MAIN CONTENT CONTAINER -->
-  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-
-    <!-- ====================================================================
-         SECTION A: EDITORIAL & OVERVIEW HUB (FreightWaves Layout)
-         ==================================================================== -->
-    <div id="tab-landing" class="tab-content active space-y-8">
-      
-      <!-- HERO BANNER -->
-      <div class="fw-card p-6 sm:p-8 relative overflow-hidden bg-gradient-to-r from-[#111a24] via-[#0e1620] to-[#0a1017] border-l-4 border-l-[#0278ff]">
-        <div class="absolute right-0 top-0 w-96 h-96 bg-[#0278ff]/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="relative z-10 max-w-3xl space-y-4">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="fw-badge fw-badge-blue"><i data-lucide="shield-check" class="w-3 h-3"></i>SONAR FORECAST ENGINE</span>
-            <span class="fw-badge fw-badge-emerald">SAIL / MINISTRY OF STEEL (SIH26006)</span>
-            <span class="fw-badge fw-badge-cyan">REAL DATA PIPELINE: EIA · FRED · OPEN-METEO · ALPHA VANTAGE</span>
-          </div>
-          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
-            What is <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#0278ff] to-[#00c2ff]">Freight Forecasting?</span>
-          </h1>
-          <p class="text-slate-300 text-base sm:text-lg leading-relaxed font-normal">
-            Freight forecasting is the process of developing advanced predictive models of what global shipping and dry bulk charter markets will look like in the future (1–30 days). For SAIL and East Coast Indian steel plants, our SONAR-powered engine optimizes bulk vessel chartering (Capesize, Kamsarmax, Panamax), minimizes ocean freight expenditure, and locks in peak spot rate arbitrage.
-          </p>
-          <div class="flex flex-wrap items-center gap-3 pt-2">
-            <button onclick="navigateToTab('optimizer')" class="fw-btn-primary">
-              <i data-lucide="sliders" class="w-4 h-4"></i>
-              <span>Launch Charter Optimizer</span>
-            </button>
-            <button onclick="loadScenario('australia_coking_coal')" class="fw-btn-secondary">
-              <i data-lucide="play" class="w-4 h-4 text-cyan-400"></i>
-              <span>Run Hay Point → Paradip Demo</span>
-            </button>
-            <button onclick="navigateToTab('market')" class="fw-btn-secondary">
-              <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i>
-              <span>View Market Radar</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3 PILLARS OF FREIGHT FORECASTING (FreightWaves Educational Cards) -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-        
-        <div class="fw-card-interactive p-6 space-y-3" onclick="navigateToTab('optimizer')">
-          <div class="w-10 h-10 rounded-lg bg-[#0278ff]/15 border border-[#0278ff]/30 flex items-center justify-center text-[#0278ff]">
-            <i data-lucide="trending-up" class="w-5 h-5"></i>
-          </div>
-          <h3 class="font-bold text-lg text-white">1. Predictive Spot Rates</h3>
-          <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
-            Multi-horizon forecasting (1–30 days) with quantified confidence intervals (P10, P50, P90) across key SAIL coking coal and iron ore routes.
-          </p>
-          <div class="text-xs font-bold text-cyan-400 flex items-center space-x-1 pt-1">
-            <span>Open Route Simulator</span><i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-          </div>
-        </div>
-
-        <div class="fw-card-interactive p-6 space-y-3" onclick="navigateToTab('ports')">
-          <div class="w-10 h-10 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-            <i data-lucide="anchor" class="w-5 h-5"></i>
-          </div>
-          <h3 class="font-bold text-lg text-white">2. Fleet & Draft Feasibility</h3>
-          <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
-            Automated vessel matching for Kamsarmax, Panamax, and Capesize classes, verifying Paradip, Vizag, and Haldia draft limits & UKC safety margins.
-          </p>
-          <div class="text-xs font-bold text-emerald-400 flex items-center space-x-1 pt-1">
-            <span>Check Port Draft Registry</span><i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-          </div>
-        </div>
-
-        <div class="fw-card-interactive p-6 space-y-3" onclick="navigateToTab('market')">
-          <div class="w-10 h-10 rounded-lg bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-            <i data-lucide="sparkles" class="w-5 h-5"></i>
-          </div>
-          <h3 class="font-bold text-lg text-white">3. Groq AI Decision Memo</h3>
-          <p class="text-slate-400 text-xs sm:text-sm leading-relaxed">
-            Live AI Executive Advisor synthesizing freight curves, inventory holding costs, port delays, and weather into board-level procurement justification memos.
-          </p>
-          <div class="text-xs font-bold text-cyan-400 flex items-center space-x-1 pt-1">
-            <span>Inspect AI Engine</span><i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- SONAR COCKPIT PREVIEW & QUICK LAUNCH -->
-      <div class="fw-card p-6 space-y-6">
-        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
-          <div>
-            <h2 class="text-xl font-bold text-white flex items-center space-x-2">
-              <i data-lucide="sliders" class="w-5 h-5 text-[#0278ff]"></i>
-              <span>Interactive SONAR Chartering Cockpit</span>
-            </h2>
-            <p class="text-slate-400 text-xs">Configure vessel cargo parameters or load pre-tested SAIL import scenarios below</p>
-          </div>
-          <div class="flex items-center space-x-2">
-            <button onclick="loadScenario('australia_coking_coal')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white border border-slate-700 transition-colors">
-              Scenario 1: Australia → Paradip (75k MT)
-            </button>
-            <button onclick="loadScenario('indonesia_thermal_coal')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white border border-slate-700 transition-colors">
-              Scenario 2: Indonesia → Haldia (55k MT)
-            </button>
-          </div>
-        </div>
-
-        <!-- Cockpit Quick Trigger Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div class="lg:col-span-1 space-y-4">
-            <div>
-              <label for="landing-cargo-type" class="fw-label">Cargo Commodity</label>
-              <select id="landing-cargo-type" onchange="syncToMainOptimizer()" class="fw-input">
-                <option value="coking_coal">Coking Coal (Prime Hard HCC)</option>
-                <option value="iron_ore">Iron Ore Fines (62% Fe)</option>
-                <option value="thermal_coal">Thermal Coal (Newcastle 6000)</option>
-                <option value="limestone">Flux / Limestone (Bulk)</option>
-              </select>
-            </div>
-            <div>
-              <label for="landing-parcel-size" class="fw-label">Parcel Size (Metric Tons)</label>
-              <input id="landing-parcel-size" type="number" value="75000" step="5000" onchange="syncToMainOptimizer()" class="fw-input mono">
-            </div>
-            <div>
-              <label for="landing-route-select" class="fw-label">Ocean Shipping Route</label>
-              <select id="landing-route-select" onchange="syncToMainOptimizer()" class="fw-input">
-                <option value="HAYPOINT_PARADIP">Hay Point (AUS) → Paradip (INPRT)</option>
-                <option value="GLADSTONE_VIZAG">Gladstone (AUS) → Visakhapatnam (INVTZ)</option>
-                <option value="TABONEO_HALDIA">Taboneo (IDN) → Haldia (INHLD)</option>
-                <option value="RICHARDSBAY_GANGAVARAM">Richards Bay (ZAF) → Gangavaram (INGNR)</option>
-              </select>
-            </div>
-            <button onclick="runLandingOptimization()" class="fw-btn-primary w-full py-3">
-              <i data-lucide="zap" class="w-4 h-4"></i>
-              <span>Calculate Optimal Charter</span>
-            </button>
-          </div>
-
-          <!-- Preview Chart -->
-          <div class="lg:col-span-3 space-y-4">
-            <div class="h-64 sm:h-72 w-full relative">
-              <canvas id="landingForecastChart"></canvas>
-            </div>
-            <div id="landing-decision-summary" class="ai-memo-box p-4 rounded-xl text-xs leading-relaxed text-slate-200">
-              <div class="flex items-center space-x-2 text-cyan-400 font-bold mb-1">
-                <i data-lucide="bot" class="w-4 h-4"></i>
-                <span>SONAR AI Procurement Directive:</span>
-              </div>
-              <p id="landing-ai-text">
-                Click "Calculate Optimal Charter" or choose a scenario above to run the multi-factor freight curve optimization and generate the executive procurement memo.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- ====================================================================
-         SECTION B: FULL CHARTER OPTIMIZER & FORECASTING STUDIO
-         ==================================================================== -->
-    <div id="tab-optimizer" class="tab-content space-y-6">
-      
-      <!-- Top Title & Configuration Bar -->
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center space-x-2">
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Bulk Charter Optimizer & Decision Studio</h1>
-            <span class="fw-badge fw-badge-blue">SONAR ENGINE</span>
-          </div>
-          <p class="text-slate-400 text-xs sm:text-sm">Cost-minimized vessel charter timing & parcel allocation against projected freight curves</p>
-        </div>
-        <div class="flex items-center space-x-2">
-          <button onclick="loadScenario('australia_coking_coal')" class="fw-btn-secondary text-xs">
-            <i data-lucide="play" class="w-3.5 h-3.5 text-cyan-400"></i><span>Demo 1: Australia → Paradip</span>
-          </button>
-          <button onclick="loadScenario('indonesia_thermal_coal')" class="fw-btn-secondary text-xs">
-            <i data-lucide="play" class="w-3.5 h-3.5 text-cyan-400"></i><span>Demo 2: Indonesia → Haldia</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Main Optimizer Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        <!-- Left: Input Parameter Controls (4 Cols) -->
-        <div class="lg:col-span-4 space-y-5">
-          <div class="fw-card p-5 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span class="font-bold text-sm text-white flex items-center space-x-2">
-                <i data-lucide="sliders" class="w-4 h-4 text-[#0278ff]"></i>
-                <span>Voyage & Cargo Specs</span>
-              </span>
-              <span class="text-[10px] text-slate-400 font-mono">STEP 1 / 3</span>
-            </div>
-
-            <div>
-              <label for="input-cargo-type" class="fw-label">Commodity Cargo</label>
-              <select id="input-cargo-type" class="fw-input">
-                <option value="coking_coal">Coking Coal (Hard Coking Coal / HCC)</option>
-                <option value="iron_ore">Iron Ore Fines (62% Fe Grade)</option>
-                <option value="thermal_coal">Thermal Coal (Newcastle 6000 NAR)</option>
-                <option value="limestone">Limestone / Flux Cargo</option>
-              </select>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label for="input-parcel-size" class="fw-label">Quantity (MT)</label>
-                <input id="input-parcel-size" type="number" value="75000" step="5000" class="fw-input mono">
-              </div>
-              <div>
-                <label for="input-cargo-value" class="fw-label">Price ($/MT)</label>
-                <input id="input-cargo-value" type="number" value="220" step="5" class="fw-input mono">
-              </div>
-            </div>
-
-            <div>
-              <label for="input-route-select" class="fw-label">Origin & Discharge Route</label>
-              <select id="input-route-select" onchange="onRouteChanged()" class="fw-input">
-                <option value="HAYPOINT_PARADIP">Hay Point (AUS) → Paradip (INPRT)</option>
-                <option value="GLADSTONE_VIZAG">Gladstone (AUS) → Visakhapatnam (INVTZ)</option>
-                <option value="TABONEO_HALDIA">Taboneo (IDN) → Haldia (INHLD)</option>
-                <option value="RICHARDSBAY_GANGAVARAM">Richards Bay (ZAF) → Gangavaram (INGNR)</option>
-              </select>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label for="input-laycan-start" class="fw-label">Laycan Start</label>
-                <input id="input-laycan-start" type="date" class="fw-input mono">
-              </div>
-              <div>
-                <label for="input-horizon-days" class="fw-label">Lookahead Window</label>
-                <select id="input-horizon-days" class="fw-input mono">
-                  <option value="15">15 Days</option>
-                  <option value="21">21 Days</option>
-                  <option value="30" selected>30 Days</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="pt-2">
-              <button id="btn-run-optimization" onclick="runOptimization()" class="fw-btn-primary w-full py-3">
-                <i data-lucide="zap" class="w-4 h-4"></i>
-                <span>Run SONAR Optimization</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Vessel Recommendation Card -->
-          <div id="vessel-recommendation-card" class="fw-card p-5 space-y-3">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-              <span class="font-bold text-xs text-white uppercase tracking-wider">Vessel Class Matching</span>
-              <span id="vessel-class-badge" class="fw-badge fw-badge-cyan">KAMSARMAX</span>
-            </div>
-            <div class="grid grid-cols-2 gap-3 text-xs">
-              <div>
-                <span class="text-slate-400 block">DWT Capacity:</span>
-                <span id="vessel-dwt-val" class="font-bold text-white font-mono">82,000 MT</span>
-              </div>
-              <div>
-                <span class="text-slate-400 block">Arrival Draft:</span>
-                <span id="vessel-draft-val" class="font-bold text-emerald-400 font-mono">13.95 m</span>
-              </div>
-              <div>
-                <span class="text-slate-400 block">Port Max Draft:</span>
-                <span id="port-max-draft-val" class="font-bold text-white font-mono">14.50 m</span>
-              </div>
-              <div>
-                <span class="text-slate-400 block">UKC Safety Margin:</span>
-                <span id="vessel-ukc-val" class="font-bold text-emerald-400 font-mono">+0.55 m</span>
-              </div>
-            </div>
-            <div id="lighterage-status-box" class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center space-x-2">
-              <i data-lucide="check-circle" class="w-4 h-4 shrink-0"></i>
-              <span>Direct berthing approved. No lighterage required.</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right: Optimization Visualizer & Groq AI Memo (8 Cols) -->
-        <div class="lg:col-span-8 space-y-5">
+      return (
+        <div className="min-h-screen flex flex-col selection:bg-white selection:text-black">
           
-          <!-- Recommendation Banner -->
-          <div id="decision-recommendation-banner" class="fw-card p-5 decision-banner-book">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-              <div class="flex items-center space-x-3">
-                <div id="decision-badge-icon" class="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-                  <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+          {/* ── 1. FLOATING NAVIGATION HEADER ──────────────────────────── */}
+          <header className="fixed top-0 left-0 w-full z-50 glass-header">
+            <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+              
+              {/* Brand Logo */}
+              <a href="#" className="flex items-center space-x-3 group">
+                <div className="w-9 h-9 border border-white/20 rounded-lg flex items-center justify-center group-hover:border-white transition-colors bg-white/5">
+                  <span className="font-syne font-bold text-lg text-white">FM</span>
                 </div>
-                <div>
-                  <div class="flex items-center space-x-2">
-                    <span id="decision-action-title" class="text-xl font-extrabold text-white">BOOK CHARTER NOW</span>
-                    <span id="decision-confidence-badge" class="fw-badge fw-badge-emerald">CONFIDENCE 88%</span>
+                <div className="flex flex-col">
+                  <span className="font-syne font-extrabold text-base tracking-[0.2em] text-white">FREIGHT MARITIME</span>
+                  <span className="text-[9px] uppercase tracking-widest text-[#94a3b8] font-mono">Tanker Owner & Operator</span>
+                </div>
+              </a>
+
+              {/* Navigation Links */}
+              <nav className="hidden lg:flex items-center space-x-8 text-xs uppercase tracking-widest font-mono text-[#94a3b8]">
+                <a href="#about" className="hover:text-white transition-colors">/ 02 ABOUT</a>
+                <a href="#fleet" className="hover:text-white transition-colors">/ 03 FLEET</a>
+                <a href="#services" className="hover:text-white transition-colors">/ 04 SERVICES</a>
+                <a href="#figures" className="hover:text-white transition-colors">/ 05 FIGURES</a>
+                <a href="#contacts" className="hover:text-white transition-colors">/ 07 CONTACTS</a>
+              </nav>
+
+              {/* Action Navigation Buttons */}
+              <div className="flex items-center space-x-3">
+                <a 
+                  href="/sail-portal" 
+                  className="btn-pill-dark font-mono text-xs text-cyan-300 border-cyan-500/30 hover:border-cyan-400"
+                >
+                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-live"></span>
+                  <span>SAIL Portal</span>
+                </a>
+                <button 
+                  onClick={() => setIsQuoteOpen(true)}
+                  className="btn-pill-white font-mono text-xs uppercase"
+                >
+                  GET A QUOTE
+                </button>
+              </div>
+
+            </div>
+          </header>
+
+          {/* ── 2. HERO SECTION WITH VIDEO BACKGROUND ──────────────────── */}
+          <section className="relative pt-36 pb-20 md:pt-48 md:pb-28 px-6 border-b border-white/10 overflow-hidden">
+            
+            {/* Background Video with Multi-Stop Dark Gradient Overlay */}
+            <video 
+              autoPlay 
+              loop 
+              muted 
+              playsInline 
+              className="absolute inset-0 h-full w-full object-cover opacity-35 pointer-events-none"
+            >
+              <source src="/videos/hero-bg.mp4" type="video/mp4" />
+            </video>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/40 to-[#080808] pointer-events-none"></div>
+
+            <div className="relative z-10 max-w-7xl mx-auto space-y-12">
+              
+              <div className="space-y-6 max-w-4xl">
+                <div className="inline-flex items-center space-x-2 text-xs font-mono uppercase tracking-widest text-[#00a8ff] border border-[#00a8ff]/25 bg-[#00a8ff]/5 px-3.5 py-1.5 rounded-full backdrop-blur-md">
+                  <span className="w-2 h-2 rounded-full bg-[#00a8ff] animate-ping"></span>
+                  <span>INDEPENDENT TANKER OWNER & OPERATOR</span>
+                </div>
+
+                <h1 className="font-syne font-extrabold text-4xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight text-white">
+                  Reliable Shipping.<br />
+                  Global Routes.<br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-[#94a3b8]">
+                    Trusted Performance.
+                  </span>
+                </h1>
+
+                <p className="text-[#94a3b8] text-base sm:text-lg max-w-2xl leading-relaxed font-light">
+                  Dedicated fleet management for clean petroleum products, dry bulk raw materials, and liquid chemical cargoes across global trade corridors.
+                </p>
+
+                <div className="flex flex-wrap items-center gap-4 pt-4">
+                  <button 
+                    onClick={() => setIsQuoteOpen(true)}
+                    className="btn-pill-white font-mono text-xs uppercase flex items-center space-x-2"
+                  >
+                    <span>CHARTERING INQUIRY</span>
+                    <i data-lucide="arrow-up-right" className="w-4 h-4"></i>
+                  </button>
+                  <a 
+                    href="/sail-portal"
+                    className="btn-pill-dark font-mono text-xs uppercase flex items-center space-x-2"
+                  >
+                    <i data-lucide="sliders" className="w-4 h-4 text-cyan-400"></i>
+                    <span>OPEN SAIL DECISION PORTAL</span>
+                  </a>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Continuous Ticker Tape */}
+            <div className="relative z-10 mt-16 pt-6 border-t border-white/10 overflow-hidden whitespace-nowrap">
+              <div className="ticker-move flex items-center space-x-10 text-xs font-mono uppercase tracking-widest text-[#94a3b8]">
+                {FLEET_DATA.concat(FLEET_DATA).map((v, idx) => (
+                  <div key={idx} className="inline-flex items-center space-x-3">
+                    <span className="text-white font-bold">{v.name}</span>
+                    <span className="text-slate-600">·</span>
+                    <span className="text-[#00a8ff]">{v.type.toUpperCase()}</span>
+                    <span className="text-slate-600">·</span>
+                    <span>{v.dwt}</span>
+                    <span className="text-slate-600">·</span>
+                    <span className="flex items-center space-x-1 text-[#00d084]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#00d084]"></span>
+                      <span>{v.status}</span>
+                    </span>
+                    <span className="text-white/20">|</span>
                   </div>
-                  <p id="decision-subtext" class="text-xs text-slate-300">Recommended action locks in current spot rate to prevent inventory shortfall</p>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── 3. SECTION 02: ABOUT ───────────────────────────────────── */}
+          <section id="about" className="py-24 px-6 border-b border-white/10">
+            <div className="max-w-7xl mx-auto space-y-16">
+              
+              <div className="flex items-center space-x-4">
+                <span className="font-mono text-xs text-[#94a3b8] uppercase tracking-widest">/ 02 About Us</span>
+                <div className="h-[1px] flex-grow bg-white/10"></div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                <div className="lg:col-span-6 space-y-6">
+                  <h2 className="font-syne font-bold text-3xl sm:text-4xl leading-snug text-white">
+                    A focused operator — powering for the next decade of maritime trade.
+                  </h2>
+                  <p className="text-[#94a3b8] text-sm sm:text-base leading-relaxed">
+                    Freight Maritime provides commercial management, tanker chartering, and safe ocean transportation of clean petroleum products, specialized liquid chemicals, and industrial commodities.
+                  </p>
+                  <p className="text-[#94a3b8] text-sm sm:text-base leading-relaxed">
+                    Operating across international waters with strict adherence to OCIMF / SIRE vetting standards, we ensure reliable delivery schedules, transparent laytime reconciliation, and optimized voyage economics.
+                  </p>
+                </div>
+
+                <div className="lg:col-span-6 grid grid-cols-2 gap-4">
+                  <div className="fm-card p-6 space-y-2">
+                    <span className="font-mono text-xs text-[#94a3b8] uppercase">Fleet Capacity</span>
+                    <div className="font-syne font-bold text-3xl text-white">150,000+</div>
+                    <p className="text-xs text-[#64748b] font-mono">DWT Managed & Chartered</p>
+                  </div>
+
+                  <div className="fm-card p-6 space-y-2">
+                    <span className="font-mono text-xs text-[#94a3b8] uppercase">Vessels</span>
+                    <div className="font-syne font-bold text-3xl text-[#00a8ff]">8 Modern</div>
+                    <p className="text-xs text-[#64748b] font-mono">IMO II/III Tankers</p>
+                  </div>
+
+                  <div className="fm-card p-6 space-y-2">
+                    <span className="font-mono text-xs text-[#94a3b8] uppercase">Cargo Handled</span>
+                    <div className="font-syne font-bold text-3xl text-[#00d084]">442,842+</div>
+                    <p className="text-xs text-[#64748b] font-mono">Metric Tons Annualized</p>
+                  </div>
+
+                  <div className="fm-card p-6 space-y-2">
+                    <span className="font-mono text-xs text-[#94a3b8] uppercase">Port Reach</span>
+                    <div className="font-syne font-bold text-3xl text-white">18 Major</div>
+                    <p className="text-xs text-[#64748b] font-mono">Global Discharge Hubs</p>
+                  </div>
                 </div>
               </div>
-              <div class="flex items-center space-x-6 text-right">
+
+            </div>
+          </section>
+
+          {/* ── 4. SECTION 03: FLEET SHOWCASE ──────────────────────────── */}
+          <section id="fleet" className="py-24 px-6 border-b border-white/10">
+            <div className="max-w-7xl mx-auto space-y-12">
+              
+              <div className="flex flex-wrap items-center justify-between gap-6">
+                <div className="flex items-center space-x-4">
+                  <span className="font-mono text-xs text-[#94a3b8] uppercase tracking-widest">/ 03 Fleet Overview</span>
+                  <div className="h-[1px] w-24 bg-white/10"></div>
+                </div>
+
+                <div className="flex items-center space-x-2 bg-[#121418] p-1.5 rounded-full border border-white/10 font-mono text-xs uppercase">
+                  <button 
+                    onClick={() => setActiveFilter("all")}
+                    className={`px-4 py-1.5 rounded-full transition-colors ${activeFilter === 'all' ? 'bg-white text-black font-bold' : 'text-[#94a3b8] hover:text-white'}`}
+                  >
+                    All Vessels ({FLEET_DATA.length})
+                  </button>
+                  <button 
+                    onClick={() => setActiveFilter("chemical")}
+                    className={`px-4 py-1.5 rounded-full transition-colors ${activeFilter === 'chemical' ? 'bg-white text-black font-bold' : 'text-[#94a3b8] hover:text-white'}`}
+                  >
+                    Chemical
+                  </button>
+                  <button 
+                    onClick={() => setActiveFilter("product")}
+                    className={`px-4 py-1.5 rounded-full transition-colors ${activeFilter === 'product' ? 'bg-white text-black font-bold' : 'text-[#94a3b8] hover:text-white'}`}
+                  >
+                    Product Tankers
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h2 className="font-syne font-bold text-3xl sm:text-4xl text-white">
+                  High-specification tonnage engineered for modern trade.
+                </h2>
+                <p className="text-[#94a3b8] text-sm max-w-xl">
+                  Double-hull, coated cargo tanks with dedicated deepwell pumping systems ensuring pure segregation across sensitive chemical and petroleum parcels.
+                </p>
+              </div>
+
+              {/* Vessel Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredFleet.map((v) => (
+                  <div 
+                    key={v.id} 
+                    className="fm-card-interactive overflow-hidden group border border-white/10"
+                    onClick={() => setSelectedVessel(v)}
+                  >
+                    <div className="h-52 w-full relative overflow-hidden bg-[#0a0b0d]">
+                      <img 
+                        src={v.image} 
+                        alt={v.name} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-85 group-hover:opacity-100"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#121418] via-transparent to-transparent"></div>
+                      
+                      <div className="absolute top-4 left-4">
+                        <span className="font-mono text-[10px] uppercase font-bold tracking-widest bg-black/75 backdrop-blur-md px-3 py-1 rounded-full text-white border border-white/10">
+                          IMO {v.imo}
+                        </span>
+                      </div>
+
+                      <div className="absolute top-4 right-4">
+                        <span className="inline-flex items-center space-x-1.5 text-[10px] font-mono uppercase font-bold bg-emerald-950/80 text-[#00d084] border border-emerald-500/30 px-3 py-1 rounded-full backdrop-blur-md">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#00d084] animate-pulse"></span>
+                          <span>{v.status}</span>
+                        </span>
+                      </div>
+
+                      <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+                        <div>
+                          <h3 className="font-syne font-bold text-2xl text-white group-hover:text-[#00a8ff] transition-colors">
+                            {v.name}
+                          </h3>
+                          <span className="font-mono text-xs text-[#94a3b8]">{v.type}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-5 space-y-3 font-mono text-xs">
+                      <div className="grid grid-cols-2 gap-2 border-b border-white/5 pb-3">
+                        <div>
+                          <span className="text-[#64748b] block text-[10px]">DWT CAPACITY</span>
+                          <span className="font-bold text-white text-sm">{v.dwt}</span>
+                        </div>
+                        <div>
+                          <span className="text-[#64748b] block text-[10px]">SUMMER DRAFT</span>
+                          <span className="font-bold text-white text-sm">{v.draft}</span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 text-[11px] text-[#94a3b8]">
+                        <div>
+                          <span className="text-[#64748b] block text-[9px]">LOA</span>
+                          <span>{v.loa}</span>
+                        </div>
+                        <div>
+                          <span className="text-[#64748b] block text-[9px]">BEAM</span>
+                          <span>{v.beam}</span>
+                        </div>
+                        <div>
+                          <span className="text-[#64748b] block text-[9px]">BUILT</span>
+                          <span>{v.year}</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 flex items-center justify-between text-xs text-[#00a8ff] font-semibold">
+                        <span>Inspect Full Specs</span>
+                        <i data-lucide="arrow-right" className="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          </section>
+
+          {/* ── 5. SECTION 04: SERVICES ────────────────────────────────── */}
+          <section id="services" className="py-24 px-6 border-b border-white/10">
+            <div className="max-w-7xl mx-auto space-y-16">
+              
+              <div className="flex items-center space-x-4">
+                <span className="font-mono text-xs text-[#94a3b8] uppercase tracking-widest">/ 04 Services</span>
+                <div className="h-[1px] flex-grow bg-white/10"></div>
+              </div>
+
+              <div className="space-y-4 max-w-2xl">
+                <h2 className="font-syne font-bold text-3xl sm:text-4xl text-white">
+                  Commercial excellence & flexible chartering agreements.
+                </h2>
+                <p className="text-[#94a3b8] text-sm">
+                  Partnering with international industrial groups, state trading enterprises, and commodity producers to execute high-volume ocean freight voyages.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <div className="fm-card p-8 space-y-6 flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <span className="font-mono text-xs text-[#00a8ff] font-bold tracking-widest block">/ 01</span>
+                    <h3 className="font-syne font-bold text-xl text-white">Tanker Shipping Service</h3>
+                    <p className="text-[#94a3b8] text-xs leading-relaxed">
+                      Safe transportation of clean petroleum products, specialized liquid chemicals, and organic vegetable oils across key European, Asian, and Mediterranean corridors.
+                    </p>
+                    <ul className="space-y-2 text-xs text-slate-300 font-mono pt-2">
+                      <li className="flex items-center space-x-2">
+                        <i data-lucide="check" className="w-3.5 h-3.5 text-[#00d084]"></i>
+                        <span>IMO Type II/III Chemical parcels</span>
+                      </li>
+                      <li className="flex items-center space-x-2">
+                        <i data-lucide="check" className="w-3.5 h-3.5 text-[#00d084]"></i>
+                        <span>Coated tanks with zero cross-contamination</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <button 
+                    onClick={() => setIsQuoteOpen(true)}
+                    className="btn-pill-dark w-full font-mono text-xs uppercase"
+                  >
+                    Request Fixture
+                  </button>
+                </div>
+
+                <div className="fm-card p-8 space-y-6 flex flex-col justify-between border-[#00a8ff]/40 bg-[#16181e]">
+                  <div className="space-y-4">
+                    <span className="font-mono text-xs text-[#00a8ff] font-bold tracking-widest block">/ 02</span>
+                    <h3 className="font-syne font-bold text-xl text-white">Tanker & Bulk Chartering</h3>
+                    <p className="text-[#94a3b8] text-xs leading-relaxed">
+                      Spot market fixtures, long-term Contracts of Affreightment (COA), and time charters structured around client production cycles.
+                    </p>
+                    <ul className="space-y-2 text-xs text-slate-300 font-mono pt-2">
+                      <li className="flex items-center space-x-2">
+                        <i data-lucide="check" className="w-3.5 h-3.5 text-[#00d084]"></i>
+                        <span>Flexible Spot & COA contracts</span>
+                      </li>
+                      <li className="flex items-center space-x-2">
+                        <i data-lucide="check" className="w-3.5 h-3.5 text-[#00d084]"></i>
+                        <span>Bespoke freight rate timing optimization</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <button 
+                    onClick={() => setIsQuoteOpen(true)}
+                    className="btn-pill-white w-full font-mono text-xs uppercase font-bold"
+                  >
+                    Inquire Rates
+                  </button>
+                </div>
+
+                <div className="fm-card p-8 space-y-6 flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <span className="font-mono text-xs text-[#00a8ff] font-bold tracking-widest block">/ 03</span>
+                    <h3 className="font-syne font-bold text-xl text-white">Commercial Management</h3>
+                    <p className="text-[#94a3b8] text-xs leading-relaxed">
+                      End-to-end voyage monitoring, bunker fuel optimization, demurrage settlements, and international oil major vetting compliance.
+                    </p>
+                    <ul className="space-y-2 text-xs text-slate-300 font-mono pt-2">
+                      <li className="flex items-center space-x-2">
+                        <i data-lucide="check" className="w-3.5 h-3.5 text-[#00d084]"></i>
+                        <span>24/7 post-fixture voyage execution</span>
+                      </li>
+                      <li className="flex items-center space-x-2">
+                        <i data-lucide="check" className="w-3.5 h-3.5 text-[#00d084]"></i>
+                        <span>SIRE / CDI vetting compliance</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <button 
+                    onClick={() => setIsQuoteOpen(true)}
+                    className="btn-pill-dark w-full font-mono text-xs uppercase"
+                  >
+                    Partner With Us
+                  </button>
+                </div>
+
+              </div>
+
+            </div>
+          </section>
+
+          {/* ── 6. SECTION 05 & 06: GEOGRAPHY & FIGURES ───────────────── */}
+          <section id="figures" className="py-24 px-6 border-b border-white/10">
+            <div className="max-w-7xl mx-auto space-y-16">
+              
+              <div className="flex items-center space-x-4">
+                <span className="font-mono text-xs text-[#94a3b8] uppercase tracking-widest">/ 05 & 06 Operational Geography</span>
+                <div className="h-[1px] flex-grow bg-white/10"></div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                
+                <div className="lg:col-span-6 space-y-6">
+                  <h2 className="font-syne font-bold text-3xl sm:text-4xl text-white">
+                    Established positioning across global maritime trade lanes.
+                  </h2>
+                  <p className="text-[#94a3b8] text-sm leading-relaxed">
+                    Our operating footprint spans the Mediterranean Sea, Continental Europe, Black Sea terminals, and Arabian Gulf trade routes.
+                  </p>
+
+                  <div className="space-y-3 pt-2">
+                    {REGIONS_DATA.map((r, idx) => (
+                      <div 
+                        key={idx}
+                        onClick={() => setActiveRegion(r)}
+                        className={`p-4 rounded-xl border cursor-pointer transition-all ${activeRegion.name === r.name ? 'bg-[#16181e] border-white text-white' : 'fm-card border-white/5 text-[#94a3b8] hover:border-white/20'}`}
+                      >
+                        <div className="flex items-center justify-between font-mono text-xs">
+                          <span className="font-bold text-sm text-white">{r.name}</span>
+                          <span className="text-[#00a8ff] font-bold">{r.share} of voyages</span>
+                        </div>
+                        <p className="text-[11px] text-[#64748b] font-mono mt-1">Terminals: {r.ports}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="lg:col-span-6 fm-card p-8 rounded-3xl space-y-6 border border-white/15">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-4 font-mono text-xs">
+                    <span className="text-[#94a3b8] uppercase">Trade Distribution</span>
+                    <span className="text-[#00d084] font-bold">● Active Operations</span>
+                  </div>
+
+                  <div className="space-y-4">
+                    {REGIONS_DATA.map((r, idx) => (
+                      <div key={idx} className="space-y-1.5">
+                        <div className="flex justify-between text-xs font-mono">
+                          <span className="text-white">{r.name}</span>
+                          <span className="text-[#94a3b8]">{r.share}</span>
+                        </div>
+                        <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full rounded-full transition-all duration-700" 
+                            style={{ width: r.share, backgroundColor: r.color }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-[#080808] border border-white/10 font-mono text-xs space-y-2">
+                    <span className="text-[#00a8ff] block font-bold">ACTIVE REGION FOCUS: {activeRegion.name}</span>
+                    <p className="text-[#94a3b8] text-[11px] leading-relaxed">
+                      Frequent voyages handling gasoil, ultra-low sulfur diesel (ULSD), biofuels, and specialty liquid chemicals.
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </section>
+
+          {/* ── 7. SECTION 07: CONTACTS & QUOTE ───────────────────────── */}
+          <section id="contacts" className="py-24 px-6 border-b border-white/10">
+            <div className="max-w-7xl mx-auto space-y-16">
+              
+              <div className="flex items-center space-x-4">
+                <span className="font-mono text-xs text-[#94a3b8] uppercase tracking-widest">/ 07 Contacts</span>
+                <div className="h-[1px] flex-grow bg-white/10"></div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                
+                <div className="lg:col-span-5 space-y-8">
+                  <div className="space-y-4">
+                    <h2 className="font-syne font-bold text-3xl sm:text-4xl text-white">
+                      Let's coordinate your next fixture.
+                    </h2>
+                    <p className="text-[#94a3b8] text-sm">
+                      Our commercial and operations desks respond promptly during international market trading hours.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4 font-mono text-xs">
+                    <div className="p-4 rounded-xl fm-card space-y-1">
+                      <span className="text-[#64748b] block text-[10px]">CHARTERING & COMMERCIAL</span>
+                      <a href="mailto:chartering@freightmaritime.com" className="text-white font-bold hover:text-[#00a8ff] transition-colors block text-sm">
+                        chartering@freightmaritime.com
+                      </a>
+                    </div>
+
+                    <div className="p-4 rounded-xl fm-card space-y-1">
+                      <span className="text-[#64748b] block text-[10px]">OPERATIONS & POST-FIXTURE</span>
+                      <a href="mailto:ops@freightmaritime.com" className="text-white font-bold hover:text-[#00a8ff] transition-colors block text-sm">
+                        ops@freightmaritime.com
+                      </a>
+                    </div>
+
+                    <div className="p-4 rounded-xl fm-card space-y-1">
+                      <span className="text-[#64748b] block text-[10px]">HEADQUARTERS</span>
+                      <p className="text-white">Leof. Alimou 62, Alimos, 174 55, Greece</p>
+                    </div>
+
+                    <div className="p-4 rounded-xl fm-card space-y-1">
+                      <span className="text-[#64748b] block text-[10px]">REGIONAL OPERATIONS</span>
+                      <p className="text-white">Commercial Maritime Hub, Odesa, Ukraine</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-7 fm-card p-8 rounded-3xl space-y-6">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-4 font-mono text-xs">
+                    <span className="text-white font-bold">INSTANT CHARTERING INQUIRY</span>
+                    <span className="text-[#00a8ff]">RESPONSE WITHIN 2 HOURS</span>
+                  </div>
+
+                  <form onSubmit={handleQuoteSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs">
+                      <div>
+                        <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">First Name</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={quoteForm.firstName}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, firstName: e.target.value })}
+                          className="fm-input"
+                          placeholder="Captain / Broker"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Last Name</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={quoteForm.lastName}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, lastName: e.target.value })}
+                          className="fm-input"
+                          placeholder="Name"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs">
+                      <div>
+                        <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Corporate Email</label>
+                        <input 
+                          type="email" 
+                          required
+                          value={quoteForm.email}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, email: e.target.value })}
+                          className="fm-input"
+                          placeholder="chartering@company.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Cargo Commodity</label>
+                        <select 
+                          value={quoteForm.cargoType}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, cargoType: e.target.value })}
+                          className="fm-input"
+                        >
+                          <option value="clean_petroleum">Clean Petroleum Products (ULSD/Gasoline)</option>
+                          <option value="chemicals">Liquid Chemicals (IMO II/III)</option>
+                          <option value="biofuels">Biofuels / Bio-intermediates</option>
+                          <option value="dry_bulk">Dry Bulk / Coking Coal / Ore</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-xs">
+                      <div>
+                        <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Parcel (MT)</label>
+                        <input 
+                          type="number" 
+                          value={quoteForm.quantityMt}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, quantityMt: e.target.value })}
+                          className="fm-input"
+                          placeholder="10,000"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Load Port</label>
+                        <input 
+                          type="text" 
+                          value={quoteForm.loadPort}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, loadPort: e.target.value })}
+                          className="fm-input"
+                          placeholder="e.g. Augusta, IT"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Discharge Port</label>
+                        <input 
+                          type="text" 
+                          value={quoteForm.dischargePort}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, dischargePort: e.target.value })}
+                          className="fm-input"
+                          placeholder="e.g. Paradip / Piraeus"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="font-mono text-xs">
+                      <label className="text-[#94a3b8] block mb-1.5 uppercase text-[10px]">Voyage Notes / Laycan</label>
+                      <textarea 
+                        rows="3"
+                        value={quoteForm.message}
+                        onChange={(e) => setQuoteForm({ ...quoteForm, message: e.target.value })}
+                        className="fm-input"
+                        placeholder="Laycan window, vetting requirements, charterers profile..."
+                      ></textarea>
+                    </div>
+
+                    {quoteSuccess ? (
+                      <div className="p-4 rounded-xl bg-emerald-950/80 border border-emerald-500 text-[#00d084] font-mono text-xs flex items-center space-x-2">
+                        <i data-lucide="check-circle" className="w-5 h-5 shrink-0"></i>
+                        <span>Fixture inquiry successfully dispatched to chartering@freightmaritime.com desk.</span>
+                      </div>
+                    ) : (
+                      <button 
+                        type="submit"
+                        className="btn-pill-white w-full font-mono text-xs uppercase font-bold py-3.5"
+                      >
+                        Submit Charter Inquiry
+                      </button>
+                    )}
+                  </form>
+                </div>
+
+              </div>
+
+            </div>
+          </section>
+
+          {/* ── 8. FOOTER ─────────────────────────────────────────────── */}
+          <footer className="py-16 px-6 bg-[#080808] border-t border-white/10 font-mono text-xs text-[#94a3b8]">
+            <div className="max-w-7xl mx-auto space-y-12">
+              
+              <div className="flex flex-wrap items-center justify-between gap-6 border-b border-white/10 pb-8">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 border border-white/20 rounded-md flex items-center justify-center bg-white/5">
+                    <span className="font-syne font-bold text-white">FM</span>
+                  </div>
+                  <span className="font-syne font-extrabold text-base tracking-[0.2em] text-white">FREIGHT MARITIME</span>
+                </div>
+
+                <div className="flex items-center space-x-6">
+                  <a href="#about" className="hover:text-white transition-colors">About</a>
+                  <a href="#fleet" className="hover:text-white transition-colors">Fleet</a>
+                  <a href="#services" className="hover:text-white transition-colors">Services</a>
+                  <a href="#contacts" className="hover:text-white transition-colors">Contacts</a>
+                  <a href="/sail-portal" className="text-[#00a8ff] hover:underline">SAIL Portal</a>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-4 text-[11px] text-[#64748b]">
                 <div>
-                  <span class="text-[10px] uppercase font-bold text-slate-400 block">Optimal Charter Date</span>
-                  <span id="decision-optimal-date" class="font-black text-lg text-white font-mono">Day 0 (Spot)</span>
+                  © 2026 Freight Maritime Ltd. All rights reserved. Registered Tanker & Bulk Vessel Operator.
                 </div>
                 <div>
-                  <span class="text-[10px] uppercase font-bold text-slate-400 block">Projected Savings</span>
-                  <span id="decision-net-savings" class="font-black text-xl text-emerald-400 font-mono">$105,400</span>
+                  Certified ISO 9001:2015 · OCIMF / SIRE Compliant Fleet Operations.
                 </div>
               </div>
-            </div>
-          </div>
 
-          <!-- Chart.js Freight Forecast Curve -->
-          <div class="fw-card p-5 space-y-3">
-            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
-              <div class="flex items-center space-x-2">
-                <i data-lucide="line-chart" class="w-4 h-4 text-cyan-400"></i>
-                <span class="font-bold text-sm text-white">Freight Rate Curve ($/MT) — Historical & 30-Day Forecast</span>
+            </div>
+          </footer>
+
+          {/* ── 9. MODAL: VESSEL SPECS ─────────────────────────────────── */}
+          <AnimatePresence>
+            {selectedVessel && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                <div className="bg-[#121418] border border-white/20 rounded-3xl max-w-2xl w-full p-8 space-y-6 relative shadow-2xl">
+                  
+                  <button 
+                    onClick={() => setSelectedVessel(null)}
+                    className="absolute top-6 right-6 text-[#94a3b8] hover:text-white font-mono text-xs border border-white/10 w-8 h-8 rounded-full flex items-center justify-center"
+                  >
+                    ✕
+                  </button>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono text-[#00a8ff] uppercase tracking-widest">{selectedVessel.type}</span>
+                    <h3 className="font-syne font-bold text-3xl text-white">{selectedVessel.name}</h3>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 font-mono text-xs">
+                    <div className="p-3 bg-[#080808] rounded-xl border border-white/5">
+                      <span className="text-[#64748b] text-[10px] block">IMO NUMBER</span>
+                      <span className="text-white font-bold">{selectedVessel.imo}</span>
+                    </div>
+                    <div className="p-3 bg-[#080808] rounded-xl border border-white/5">
+                      <span className="text-[#64748b] text-[10px] block">FLAG</span>
+                      <span className="text-white font-bold">{selectedVessel.flag}</span>
+                    </div>
+                    <div className="p-3 bg-[#080808] rounded-xl border border-white/5">
+                      <span className="text-[#64748b] text-[10px] block">BUILT YEAR</span>
+                      <span className="text-white font-bold">{selectedVessel.year}</span>
+                    </div>
+                    <div className="p-3 bg-[#080808] rounded-xl border border-white/5">
+                      <span className="text-[#64748b] text-[10px] block">DEADWEIGHT</span>
+                      <span className="text-[#00d084] font-bold">{selectedVessel.dwt}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 font-mono text-xs">
+                    <div className="p-3 bg-[#080808] rounded-xl border border-white/5">
+                      <span className="text-[#64748b] text-[10px] block">LENGTH (LOA)</span>
+                      <span className="text-white">{selectedVessel.loa}</span>
+                    </div>
+                    <div className="p-3 bg-[#080808] rounded-xl border border-white/5">
+                      <span className="text-[#64748b] text-[10px] block">BEAM</span>
+                      <span className="text-white">{selectedVessel.beam}</span>
+                    </div>
+                    <div className="p-3 bg-[#080808] rounded-xl border border-white/5">
+                      <span className="text-[#64748b] text-[10px] block">SUMMER DRAFT</span>
+                      <span className="text-white">{selectedVessel.draft}</span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-[#080808] border border-white/10 space-y-1 font-mono text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-[#94a3b8]">Current AIS Position:</span>
+                      <span className="text-[#00d084] font-bold">{selectedVessel.destination} ({selectedVessel.speed})</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 pt-2">
+                    <button 
+                      onClick={() => {
+                        setSelectedVessel(null);
+                        setIsQuoteOpen(true);
+                      }}
+                      className="btn-pill-white flex-1 font-mono text-xs uppercase"
+                    >
+                      Charter This Vessel
+                    </button>
+                  </div>
+
+                </div>
               </div>
-              <div class="flex items-center space-x-3 text-xs">
-                <span class="flex items-center space-x-1.5"><span class="w-3 h-0.5 bg-slate-400"></span><span class="text-slate-400">Historical</span></span>
-                <span class="flex items-center space-x-1.5"><span class="w-3 h-0.5 bg-[#0278ff]"></span><span class="text-[#0278ff] font-bold">P50 Forecast</span></span>
-                <span class="flex items-center space-x-1.5"><span class="w-3 h-2 bg-[#00c2ff]/20 rounded-sm"></span><span class="text-cyan-400">P10-P90 Range</span></span>
+            )}
+          </AnimatePresence>
+
+          {/* ── 10. MODAL: GET A QUOTE SLIDE-OVER ───────────────────────── */}
+          <AnimatePresence>
+            {isQuoteOpen && (
+              <div className="fixed inset-0 z-50 flex justify-end bg-black/75 backdrop-blur-sm">
+                <div className="bg-[#121418] border-l border-white/15 w-full max-w-lg h-full p-8 overflow-y-auto space-y-6 shadow-2xl relative">
+                  
+                  <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                    <div>
+                      <span className="font-mono text-xs text-[#00a8ff] uppercase">Freight Maritime Chartering Desk</span>
+                      <h3 className="font-syne font-bold text-2xl text-white">Get a Charter Quote</h3>
+                    </div>
+                    <button 
+                      onClick={() => setIsQuoteOpen(false)}
+                      className="text-[#94a3b8] hover:text-white font-mono text-xs border border-white/10 w-8 h-8 rounded-full flex items-center justify-center"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleQuoteSubmit} className="space-y-4 font-mono text-xs">
+                    <div>
+                      <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Contact Name</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={quoteForm.firstName}
+                        onChange={(e) => setQuoteForm({ ...quoteForm, firstName: e.target.value })}
+                        className="fm-input"
+                        placeholder="Your full name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Corporate Email</label>
+                      <input 
+                        type="email" 
+                        required
+                        value={quoteForm.email}
+                        onChange={(e) => setQuoteForm({ ...quoteForm, email: e.target.value })}
+                        className="fm-input"
+                        placeholder="chartering@corporation.com"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Commodity Grade</label>
+                      <select 
+                        value={quoteForm.cargoType}
+                        onChange={(e) => setQuoteForm({ ...quoteForm, cargoType: e.target.value })}
+                        className="fm-input"
+                      >
+                        <option value="clean_petroleum">Clean Petroleum Products (ULSD/Gasoline)</option>
+                        <option value="chemicals">Liquid Chemicals (IMO II/III)</option>
+                        <option value="biofuels">Biofuels / Bio-intermediates</option>
+                        <option value="dry_bulk">Dry Bulk / Coking Coal / Ore</option>
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Load Port</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={quoteForm.loadPort}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, loadPort: e.target.value })}
+                          className="fm-input"
+                          placeholder="e.g. Genoa / Hay Point"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Discharge Port</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={quoteForm.dischargePort}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, dischargePort: e.target.value })}
+                          className="fm-input"
+                          placeholder="e.g. Alexandria / Paradip"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Quantity (MT)</label>
+                      <input 
+                        type="number" 
+                        value={quoteForm.quantityMt}
+                        onChange={(e) => setQuoteForm({ ...quoteForm, quantityMt: e.target.value })}
+                        className="fm-input"
+                        placeholder="10000"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[#94a3b8] block mb-1 uppercase text-[10px]">Special Instructions</label>
+                      <textarea 
+                        rows="3"
+                        value={quoteForm.message}
+                        onChange={(e) => setQuoteForm({ ...quoteForm, message: e.target.value })}
+                        className="fm-input"
+                        placeholder="Laycan, temperature requirements, pump rates..."
+                      ></textarea>
+                    </div>
+
+                    {quoteSuccess ? (
+                      <div className="p-4 rounded-xl bg-emerald-950/80 border border-emerald-500 text-[#00d084]">
+                        Inquiry received. A chartering broker will reach out within 2 hours.
+                      </div>
+                    ) : (
+                      <button 
+                        type="submit"
+                        className="btn-pill-white w-full font-mono text-xs uppercase"
+                      >
+                        Request Instant Quote
+                      </button>
+                    )}
+                  </form>
+
+                </div>
               </div>
-            </div>
-            <div class="h-80 w-full relative">
-              <canvas id="optimizerForecastChart"></canvas>
-            </div>
-          </div>
-
-          <!-- GROQ AI EXECUTIVE BOARD MEMO (Linked) -->
-          <div id="groq-ai-memo-section" class="ai-memo-box p-5 rounded-2xl space-y-3">
-            <div class="flex items-center justify-between border-b border-cyan-500/20 pb-2.5">
-              <div class="flex items-center space-x-2 text-cyan-400">
-                <i data-lucide="sparkles" class="w-5 h-5"></i>
-                <span class="font-extrabold text-sm uppercase tracking-wider">Groq AI Executive Procurement Memo</span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <span class="fw-badge fw-badge-cyan">MODEL: QWEN/QWEN3.8-27B</span>
-                <span class="fw-badge fw-badge-emerald">BOARD READY</span>
-              </div>
-            </div>
-            <div id="groq-ai-memo-body" class="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2">
-              <p id="groq-ai-memo-text">
-                Immediate booking of a Kamsarmax vessel at current spot levels ($10.70/MT) secures critical Hay Point to Paradip coking coal supply, aligning with the 88% confidence forecast model. This action neutralizes inventory holding costs while avoiding projected regional port congestion and cyclone weather disruption in the Bay of Bengal.
-              </p>
-            </div>
-            <div class="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 font-mono">
-              <span>Author: SONAR AI Advisor</span>
-              <span>Ref: SAIL-PROC-2026-09</span>
-            </div>
-          </div>
+            )}
+          </AnimatePresence>
 
         </div>
+      );
+    }
 
-      </div>
-
-    </div>
-
-    <!-- ====================================================================
-         SECTION C: MARKET RADAR (Real Multi-Source Feeds)
-         ==================================================================== -->
-    <div id="tab-market" class="tab-content space-y-6">
-      
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center space-x-2">
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Global Maritime & Macro Radar</h1>
-            <span class="fw-badge fw-badge-cyan">LIVE API FEEDS</span>
-          </div>
-          <p class="text-slate-400 text-xs sm:text-sm">Real-time signals ingested from EIA, FRED, Alpha Vantage, Open-Meteo & Yahoo Finance</p>
-        </div>
-        <button onclick="refreshMarketData()" class="fw-btn-secondary text-xs">
-          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-cyan-400"></i><span>Refresh Feeds</span>
-        </button>
-      </div>
-
-      <!-- Market Metric Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        <div class="fw-card p-4 space-y-2">
-          <div class="flex items-center justify-between text-xs text-slate-400 font-semibold">
-            <span>BRENT CRUDE (EIA)</span>
-            <i data-lucide="flame" class="w-4 h-4 text-amber-400"></i>
-          </div>
-          <div class="text-2xl font-black text-white font-mono" id="market-brent-val">$74.85</div>
-          <div class="text-[11px] text-emerald-400 font-bold flex items-center space-x-1">
-            <i data-lucide="trending-up" class="w-3 h-3"></i><span>+0.92% 24h · U.S. EIA API v2</span>
-          </div>
-        </div>
-
-        <div class="fw-card p-4 space-y-2">
-          <div class="flex items-center justify-between text-xs text-slate-400 font-semibold">
-            <span>SINGAPORE VLSFO</span>
-            <i data-lucide="fuel" class="w-4 h-4 text-cyan-400"></i>
-          </div>
-          <div class="text-2xl font-black text-white font-mono" id="market-vlsfo-val">$582.40/t</div>
-          <div class="text-[11px] text-emerald-400 font-bold flex items-center space-x-1">
-            <i data-lucide="trending-up" class="w-3 h-3"></i><span>0.50%S Bunker Fuel Index</span>
-          </div>
-        </div>
-
-        <div class="fw-card p-4 space-y-2">
-          <div class="flex items-center justify-between text-xs text-slate-400 font-semibold">
-            <span>USD / INR (FRED)</span>
-            <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-400"></i>
-          </div>
-          <div class="text-2xl font-black text-white font-mono" id="market-usdinr-val">₹83.94</div>
-          <div class="text-[11px] text-slate-400 font-bold flex items-center space-x-1">
-            <span>RBI Reference Benchmark</span>
-          </div>
-        </div>
-
-        <div class="fw-card p-4 space-y-2">
-          <div class="flex items-center justify-between text-xs text-slate-400 font-semibold">
-            <span>COPPER PROXY (AV)</span>
-            <i data-lucide="layers" class="w-4 h-4 text-rose-400"></i>
-          </div>
-          <div class="text-2xl font-black text-white font-mono" id="market-copper-val">$9,410/t</div>
-          <div class="text-[11px] text-emerald-400 font-bold flex items-center space-x-1">
-            <i data-lucide="trending-up" class="w-3 h-3"></i><span>Alpha Vantage LME Proxy</span>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Chart Matrix -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="fw-card p-5 space-y-3">
-          <h3 class="text-sm font-bold text-white flex items-center space-x-2">
-            <i data-lucide="activity" class="w-4 h-4 text-[#0278ff]"></i>
-            <span>Baltic Sub-Indices (Capesize, Panamax, Supramax)</span>
-          </h3>
-          <div class="h-64 relative">
-            <canvas id="balticIndicesChart"></canvas>
-          </div>
-        </div>
-
-        <div class="fw-card p-5 space-y-3">
-          <h3 class="text-sm font-bold text-white flex items-center space-x-2">
-            <i data-lucide="cloud-lightning" class="w-4 h-4 text-cyan-400"></i>
-            <span>Bay of Bengal Weather & Wave Height (Open-Meteo)</span>
-          </h3>
-          <div class="h-64 relative">
-            <canvas id="weatherSignalsChart"></canvas>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- ====================================================================
-         SECTION D: BACKTEST STUDIO
-         ==================================================================== -->
-    <div id="tab-backtest" class="tab-content space-y-6">
-      
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center space-x-2">
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Backtest Studio & Model Verification</h1>
-            <span class="fw-badge fw-badge-emerald">HISTORICAL VALIDATION</span>
-          </div>
-          <p class="text-slate-400 text-xs sm:text-sm">Quantitative audit of forecast accuracy and simulated procurement savings over 730 days</p>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="fw-card p-5 space-y-1">
-          <span class="text-slate-400 text-xs font-bold uppercase">Mean Absolute Percentage Error</span>
-          <div class="text-2xl font-black text-emerald-400 font-mono">4.12% MAPE</div>
-          <p class="text-[11px] text-slate-400">Exceeds SIH26006 benchmark accuracy (&lt;8%)</p>
-        </div>
-        <div class="fw-card p-5 space-y-1">
-          <span class="text-slate-400 text-xs font-bold uppercase">Annualized Charter Savings</span>
-          <div class="text-2xl font-black text-cyan-400 font-mono">$4.82 Million</div>
-          <p class="text-[11px] text-slate-400">Simulated over 48 Cape/Panamax voyages</p>
-        </div>
-        <div class="fw-card p-5 space-y-1">
-          <span class="text-slate-400 text-xs font-bold uppercase">Timing Alpha Win Rate</span>
-          <div class="text-2xl font-black text-white font-mono">83.3%</div>
-          <p class="text-[11px] text-slate-400">Beat spot-on-arrival procurement</p>
-        </div>
-      </div>
-
-      <div class="fw-card p-5 space-y-3">
-        <h3 class="text-sm font-bold text-white">Actual Spot vs. SONAR Forecast Historical Curve</h3>
-        <div class="h-80 relative">
-          <canvas id="backtestChart"></canvas>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- ====================================================================
-         SECTION E: PORTS & WEATHER REGISTRY
-         ==================================================================== -->
-    <div id="tab-ports" class="tab-content space-y-6">
-      
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center space-x-2">
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Indian East Coast Port Registry</h1>
-            <span class="fw-badge fw-badge-blue">SAIL DISCHARGE HUBS</span>
-          </div>
-          <p class="text-slate-400 text-xs sm:text-sm">Operational draft constraints, mechanized berth specs, anchorage queues & IMD/Open-Meteo alerts</p>
-        </div>
-      </div>
-
-      <div id="ports-grid-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        <!-- Rendered dynamically by app.js -->
-      </div>
-
-    </div>
-
-  </main>
-
-  <!-- 5. FREIGHTWAVES ENTERPRISE FOOTER -->
-  <footer class="bg-[#070b10] border-t border-slate-800/80 text-slate-400 text-xs mt-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-        
-        <div class="space-y-3">
-          <div class="flex items-center space-x-2 text-white font-black text-base">
-            <span class="tracking-wider">FREIGHT<span class="text-[#0278ff]">WAVES</span></span>
-            <span class="fw-badge fw-badge-cyan text-[10px]">SONAR</span>
-          </div>
-          <p class="text-slate-400 text-xs leading-relaxed">
-            The Nerve Center of the Global Bulk Supply Chain. Developing predictive intelligence for SAIL and the Ministry of Steel (SIH26006).
-          </p>
-        </div>
-
-        <div class="space-y-2">
-          <span class="font-bold text-white text-xs uppercase tracking-wider block">Live Data Streams</span>
-          <ul class="space-y-1.5 text-[11px]">
-            <li class="hover:text-white transition-colors cursor-pointer">• U.S. EIA API v2 (Petroleum & Bunker)</li>
-            <li class="hover:text-white transition-colors cursor-pointer">• Federal Reserve FRED (USD/INR & PMI)</li>
-            <li class="hover:text-white transition-colors cursor-pointer">• Alpha Vantage (Metals & Energy)</li>
-            <li class="hover:text-white transition-colors cursor-pointer">• Open-Meteo Marine & Atmospheric</li>
-          </ul>
-        </div>
-
-        <div class="space-y-2">
-          <span class="font-bold text-white text-xs uppercase tracking-wider block">Steel & Mining Routes</span>
-          <ul class="space-y-1.5 text-[11px]">
-            <li class="hover:text-white transition-colors cursor-pointer">• Hay Point / Gladstone → Paradip (INPRT)</li>
-            <li class="hover:text-white transition-colors cursor-pointer">• Taboneo / Kalimantan → Haldia (INHLD)</li>
-            <li class="hover:text-white transition-colors cursor-pointer">• Richards Bay → Gangavaram (INGNR)</li>
-            <li class="hover:text-white transition-colors cursor-pointer">• Port Latta / Hedland → Vizag (INVTZ)</li>
-          </ul>
-        </div>
-
-        <div class="space-y-2">
-          <span class="font-bold text-white text-xs uppercase tracking-wider block">System Connectivity</span>
-          <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1 text-[11px]">
-            <div class="flex items-center justify-between">
-              <span>Backend API:</span>
-              <span class="text-emerald-400 font-bold">FastAPI 1.0.0</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span>AI Engine:</span>
-              <span class="text-cyan-400 font-bold">Groq Qwen 3.8</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span>Data Audit:</span>
-              <span class="text-emerald-400 font-bold">12/12 Criteria Passed</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="border-t border-slate-800/80 pt-6 flex flex-wrap items-center justify-between gap-4 text-slate-400 text-[11px]">
-        <div>
-          © 2026 FreightWaves Inc. & SAIL / Ministry of Steel. All rights reserved.
-        </div>
-        <div class="flex items-center space-x-4">
-          <a href="javascript:void(0)" class="hover:text-white transition-colors">Privacy Policy</a>
-          <a href="javascript:void(0)" class="hover:text-white transition-colors">Terms of Use</a>
-          <a href="javascript:void(0)" class="hover:text-white transition-colors">API Documentation</a>
-          <a href="https://gosonar.com" target="_blank" class="hover:text-white transition-colors">SONAR Portal</a>
-        </div>
-      </div>
-
-    </div>
-  </footer>
-
-  <!-- Application Logic -->
-  <script src="/static/js/app.js"></script>
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<FreightMaritimeApp />);
+  </script>
 </body>
 </html>

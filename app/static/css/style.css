@@ -1,33 +1,30 @@
 /* ==========================================================================
-   FreightWaves SONAR — Enterprise Freight Forecasting & Intelligence Theme
-   SIH26006: SAIL & Ministry of Steel Bulk Cargo Procurement Platform
+   Freight Maritime & SAIL Portal — Unified Dark Maritime Design System
+   Palette: Pitch Black (#080808 / #0a0b0d), Ultra-Dark Charcoal (#121418 / #16181e),
+            Electric Blue (#00a8ff), Crisp White (#ffffff), Steel Slate (#94a3b8)
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap');
 
 :root {
-  --fw-dark-bg: #0b1118;
-  --fw-navy-bg: #111a24;
-  --fw-card-bg: rgba(19, 29, 41, 0.78);
-  --fw-card-border: rgba(255, 255, 255, 0.08);
-  --fw-card-hover: rgba(26, 39, 56, 0.9);
+  --fm-pitch: #080808;
+  --fm-dark: #0a0b0d;
+  --fm-surface: #121418;
+  --fm-card: #16181e;
+  --fm-card-hover: #1c2028;
+  --fm-border: rgba(255, 255, 255, 0.08);
+  --fm-border-hover: rgba(255, 255, 255, 0.22);
   
-  --fw-blue-primary: #0278ff;
-  --fw-blue-deep: #0056b3;
-  --fw-blue-glow: rgba(2, 120, 255, 0.28);
+  --fm-blue: #00a8ff;
+  --fm-blue-glow: rgba(0, 168, 255, 0.25);
   
-  --fw-cyan: #00c2ff;
-  --fw-cyan-glow: rgba(0, 194, 255, 0.25);
+  --fm-cyan: #38bdf8;
+  --fm-emerald: #00d084;
+  --fm-emerald-glow: rgba(0, 208, 132, 0.25);
   
-  --fw-emerald: #00d084;
-  --fw-emerald-glow: rgba(0, 208, 132, 0.22);
-  
-  --fw-rose: #f43f5e;
-  --fw-amber: #f59e0b;
-  
-  --fw-text-main: #f8fafc;
-  --fw-text-muted: #94a3b8;
-  --fw-text-dim: #64748b;
+  --fm-text-white: #ffffff;
+  --fm-text-steel: #94a3b8;
+  --fm-text-dim: #64748b;
 }
 
 * {
@@ -37,362 +34,237 @@
 }
 
 body {
-  background-color: var(--fw-dark-bg);
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(2, 120, 255, 0.09) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(0, 194, 255, 0.06) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(0, 208, 132, 0.04) 0px, transparent 50%);
-  background-attachment: fixed;
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  color: var(--fw-text-main);
+  background-color: var(--fm-pitch);
+  color: var(--fm-text-white);
+  font-family: 'Inter', sans-serif;
   overflow-x: hidden;
 }
 
-.mono {
-  font-family: 'JetBrains Mono', monospace;
+.font-syne { font-family: 'Syne', sans-serif; }
+.font-space { font-family: 'Space Grotesk', sans-serif; }
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+
+/* Subtle Dark Grid Overlay */
+.grid-overlay {
+  background-size: 50px 50px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
 }
 
 /* Custom Scrollbars */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #0b1118; }
-::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #334155; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--fm-pitch); }
+::-webkit-scrollbar-thumb { background: #1f242d; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #353d4c; }
 
-/* ── FreightWaves Top Multi-Brand Bar ────────────────────────────── */
-.fw-topbar {
-  background: #06090e;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 0.75rem;
-  color: #94a3b8;
+/* ── Glassmorphic Navigation Header ──────────────────────────────── */
+.glass-header {
+  background: rgba(8, 8, 8, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--fm-border);
 }
 
-.brand-tab {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 12px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: #94a3b8;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.brand-tab:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.brand-tab.active {
-  color: #ffffff;
-  border-bottom-color: var(--fw-blue-primary);
-  background: rgba(2, 120, 255, 0.08);
-}
-
-/* ── Live Market Ticker Tape ─────────────────────────────────────── */
-.ticker-container {
-  background: #090e15;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+/* ── Ticker Tape Stream ──────────────────────────────────────────── */
+.ticker-wrap {
+  background: #060709;
+  border-bottom: 1px solid var(--fm-border);
   overflow: hidden;
   white-space: nowrap;
-  position: relative;
 }
 
-.ticker-track {
+.ticker-move {
   display: inline-flex;
-  animation: tickerSlide 45s linear infinite;
+  animation: tickerScroll 40s linear infinite;
 }
 
-.ticker-track:hover {
+.ticker-move:hover {
   animation-play-state: paused;
 }
 
-@keyframes tickerSlide {
+@keyframes tickerScroll {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
 
-.ticker-item {
+.ticker-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 20px;
-  font-size: 0.75rem;
+  padding: 5px 16px;
+  font-size: 0.72rem;
+  font-family: 'JetBrains Mono', monospace;
   border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.ticker-label {
-  color: #94a3b8;
+/* ── Dark Charcoal Cards ─────────────────────────────────────────── */
+.fm-card {
+  background: var(--fm-surface);
+  border: 1px solid var(--fm-border);
+  border-radius: 16px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fm-card:hover {
+  border-color: var(--fm-border-hover);
+}
+
+.fm-card-interactive {
+  background: var(--fm-surface);
+  border: 1px solid var(--fm-border);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fm-card-interactive:hover {
+  background: var(--fm-card);
+  border-color: rgba(0, 168, 255, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -10px var(--fm-blue-glow);
+}
+
+/* ── Button Styles ───────────────────────────────────────────────── */
+.btn-pill-white {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #ffffff;
+  color: #000000;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  padding: 10px 22px;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.15);
+}
+
+.btn-pill-white:hover {
+  background-color: #e2e8f0;
+  transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.25);
+}
+
+.btn-pill-dark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #1a1d24;
+  color: #ffffff;
   font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  letter-spacing: 0.03em;
+  font-size: 0.8125rem;
+  padding: 10px 20px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
-.ticker-val {
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 700;
-  color: #f8fafc;
+.btn-pill-dark:hover {
+  background-color: #242933;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
-.ticker-badge-up {
-  color: #00d084;
-  background: rgba(0, 208, 132, 0.12);
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 0.68rem;
-  font-weight: 700;
-}
-
-.ticker-badge-down {
-  color: #f43f5e;
-  background: rgba(244, 63, 94, 0.12);
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 0.68rem;
-  font-weight: 700;
-}
-
-/* ── FreightWaves Main Navbar ────────────────────────────────────── */
-.fw-main-header {
-  background: rgba(11, 17, 24, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.fw-nav-link {
+/* ── Status Pills & Badges ───────────────────────────────────────── */
+.badge-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: #94a3b8;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  border: 1px solid transparent;
-}
-
-.fw-nav-link:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.fw-nav-link.active {
-  color: #ffffff;
-  background: rgba(2, 120, 255, 0.15);
-  border-color: rgba(2, 120, 255, 0.35);
-  box-shadow: 0 0 16px var(--fw-blue-glow);
-}
-
-/* ── Glassmorphic & FreightWaves Panels ─────────────────────────── */
-.fw-card {
-  background: var(--fw-card-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--fw-card-border);
-  border-radius: 14px;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.fw-card:hover {
-  border-color: rgba(255, 255, 255, 0.14);
-}
-
-.fw-card-interactive {
-  background: var(--fw-card-bg);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--fw-card-border);
-  border-radius: 14px;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.fw-card-interactive:hover {
-  background: var(--fw-card-hover);
-  border-color: rgba(2, 120, 255, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px -10px var(--fw-blue-glow);
-}
-
-.fw-card-glow-blue {
-  box-shadow: 0 0 25px -5px var(--fw-blue-glow);
-  border-color: rgba(2, 120, 255, 0.3);
-}
-
-.fw-card-glow-emerald {
-  box-shadow: 0 0 25px -5px var(--fw-emerald-glow);
-  border-color: rgba(0, 208, 132, 0.3);
-}
-
-/* ── Badges & Status Indicators ──────────────────────────────────── */
-.fw-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 9px;
+  padding: 4px 10px;
   border-radius: 9999px;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.fw-badge-blue {
-  color: #60a5fa;
-  background: rgba(2, 120, 255, 0.14);
-  border: 1px solid rgba(2, 120, 255, 0.3);
-}
-
-.fw-badge-cyan {
+.badge-blue {
+  background: rgba(0, 168, 255, 0.12);
   color: #38bdf8;
-  background: rgba(0, 194, 255, 0.14);
-  border: 1px solid rgba(0, 194, 255, 0.3);
+  border: 1px solid rgba(0, 168, 255, 0.3);
 }
 
-.fw-badge-emerald {
+.badge-emerald {
+  background: rgba(0, 208, 132, 0.12);
   color: #34d399;
-  background: rgba(0, 208, 132, 0.14);
   border: 1px solid rgba(0, 208, 132, 0.3);
 }
 
-.fw-badge-amber {
-  color: #fbbf24;
-  background: rgba(245, 158, 11, 0.14);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-}
-
-.fw-badge-rose {
-  color: #fb7185;
-  background: rgba(244, 63, 94, 0.14);
-  border: 1px solid rgba(244, 63, 94, 0.3);
-}
-
-/* ── Decision Banner Styles ──────────────────────────────────────── */
-.decision-banner-book {
-  background: linear-gradient(135deg, rgba(0, 208, 132, 0.15) 0%, rgba(11, 17, 24, 0.95) 100%);
-  border: 1px solid rgba(0, 208, 132, 0.4);
-  box-shadow: 0 0 30px -5px var(--fw-emerald-glow);
-}
-
-.decision-banner-wait {
-  background: linear-gradient(135deg, rgba(2, 120, 255, 0.16) 0%, rgba(11, 17, 24, 0.95) 100%);
-  border: 1px solid rgba(2, 120, 255, 0.4);
-  box-shadow: 0 0 30px -5px var(--fw-blue-glow);
+.badge-outline {
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 /* ── Live Blinking Indicator ─────────────────────────────────────── */
-.animate-pulse-live {
-  animation: liveBlink 1.8s ease-in-out infinite;
+.animate-live {
+  animation: liveDot 1.8s ease-in-out infinite;
 }
 
-@keyframes liveBlink {
+@keyframes liveDot {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(1.15); }
+  50% { opacity: 0.3; transform: scale(1.2); }
 }
 
 /* ── Groq AI Executive Box ───────────────────────────────────────── */
-.ai-memo-box {
-  background: linear-gradient(180deg, rgba(17, 26, 36, 0.9) 0%, rgba(11, 17, 24, 0.95) 100%);
-  border: 1px solid rgba(0, 194, 255, 0.25);
-  border-left: 4px solid var(--fw-cyan);
-  box-shadow: 0 8px 24px -6px var(--fw-cyan-glow);
+.fm-ai-memo {
+  background: linear-gradient(180deg, #121418 0%, #0d0f13 100%);
+  border: 1px solid rgba(0, 168, 255, 0.25);
+  border-left: 4px solid var(--fm-blue);
+  box-shadow: 0 8px 24px -6px var(--fm-blue-glow);
+  border-radius: 16px;
 }
 
 /* ── Form Inputs ─────────────────────────────────────────────────── */
-.fw-input {
+.fm-input {
   width: 100%;
-  background: rgba(15, 23, 33, 0.9);
+  background: #0a0b0d;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 8px 12px;
+  border-radius: 10px;
+  padding: 10px 14px;
   color: #ffffff;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
   outline: none;
   transition: all 0.2s ease;
 }
 
-.fw-input:focus {
-  border-color: var(--fw-blue-primary);
-  box-shadow: 0 0 0 3px rgba(2, 120, 255, 0.2);
+.fm-input:focus {
+  border-color: var(--fm-blue);
+  box-shadow: 0 0 0 3px rgba(0, 168, 255, 0.2);
 }
 
-.fw-label {
+.fm-label {
   display: block;
   font-size: 0.75rem;
   font-weight: 700;
   color: #94a3b8;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
 }
 
-/* ── Primary CTA Buttons ─────────────────────────────────────────── */
-.fw-btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: linear-gradient(135deg, #0278ff 0%, #0056b3 100%);
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 0.875rem;
-  padding: 9px 18px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  cursor: pointer;
-  box-shadow: 0 4px 14px var(--fw-blue-glow);
-  transition: all 0.2s ease;
-}
-
-.fw-btn-primary:hover {
-  background: linear-gradient(135deg, #1d88ff 0%, #0266cc 100%);
-  box-shadow: 0 6px 20px rgba(2, 120, 255, 0.45);
-  transform: translateY(-1px);
-}
-
-.fw-btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #f8fafc;
-  font-weight: 600;
-  font-size: 0.875rem;
-  padding: 9px 16px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.fw-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.25);
-}
-
-/* ── Toast Notifications ─────────────────────────────────────────── */
+/* Toast Container */
 .toast-item {
-  background: #111a24;
+  background: #121418;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-  padding: 12px 16px;
+  border-radius: 12px;
+  padding: 12px 18px;
   color: #ffffff;
   font-size: 0.8125rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: auto;
 }
 
-@keyframes slideInRight {
+@keyframes slideIn {
   from { transform: translateX(100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes fadeOut {
-  from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.95); }
 }

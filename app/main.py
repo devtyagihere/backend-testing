@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from app.core.config import settings
 from app.api.routes import router as api_router
 
@@ -30,16 +30,22 @@ if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.get("/")
-def serve_ui():
-    index_file = os.path.join(os.path.dirname(__file__), "static", "index.html")
-    if os.path.exists(index_file):
-        return FileResponse(index_file)
-    return {"message": "Welcome to SAIL Freight Forecasting API. Navigate to /docs for Swagger UI."}
+def serve_home_ui():
+    """Main Freight Maritime Landing Page"""
+    home_file = os.path.join(os.path.dirname(__file__), "static", "index.html")
+    if os.path.exists(home_file):
+        return FileResponse(home_file)
+    return {"message": "Freight Maritime Home page not found."}
+
+@app.get("/sail-portal")
+def serve_sail_portal_ui():
+    """SAIL & Ministry of Steel Intelligent Charter Decision Workspace"""
+    portal_file = os.path.join(os.path.dirname(__file__), "static", "sail_portal.html")
+    if os.path.exists(portal_file):
+        return FileResponse(portal_file)
+    return {"message": "SAIL Portal workspace page not found."}
 
 @app.get("/oris")
-def serve_oris_ui():
-    oris_file = os.path.join(os.path.dirname(__file__), "static", "oris.html")
-    if os.path.exists(oris_file):
-        return FileResponse(oris_file)
-    return {"message": "Oris Maritime page not found."}
-
+def redirect_oris_to_home():
+    """Backward-compatibility redirect"""
+    return RedirectResponse(url="/", status_code=301)
