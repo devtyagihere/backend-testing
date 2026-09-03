@@ -1,6 +1,5 @@
-"""
-Unit and Integration Tests for Charter Inquiries & Admin Dashboard
-"""
+import sys, os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
@@ -122,3 +121,15 @@ def test_admin_authorized_fetch_and_status_update():
         headers=admin_headers
     )
     assert bad_patch.status_code == 422
+    print("[PASS] test_admin_authorized_fetch_and_status_update")
+
+
+if __name__ == "__main__":
+    test_submit_invalid_form_validation_errors()
+    print("[PASS] test_submit_invalid_form_validation_errors")
+    test_submit_valid_form_and_save()
+    print("[PASS] test_submit_valid_form_and_save")
+    test_admin_unauthorized_access_denied()
+    print("[PASS] test_admin_unauthorized_access_denied")
+    test_admin_authorized_fetch_and_status_update()
+

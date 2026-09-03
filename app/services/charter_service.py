@@ -26,11 +26,33 @@ def _get_storage_paths():
     return path, lock
 
 
+def _get_seed_path():
+    """Locate bundled seed charter inquiries file."""
+    candidates = [
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "charter_inquiries.json"),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "charter_inquiries.json")
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return None
+
+
 def _ensure_local_storage():
     path, _ = _get_storage_paths()
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         if not os.path.exists(path):
+            seed_path = _get_seed_path()
+            if seed_path and os.path.abspath(seed_path) != os.path.abspath(path):
+                try:
+                    with open(seed_path, "r", encoding="utf-8") as sf:
+                        seed_data = json.load(sf)
+                    with open(path, "w", encoding="utf-8") as f:
+                        json.dump(seed_data, f, indent=2)
+                    return
+                except Exception as seed_err:
+                    logger.warning(f"Could not load seed data from {seed_path}: {seed_err}")
             with open(path, "w", encoding="utf-8") as f:
                 json.dump([], f, indent=2)
     except Exception as e:
