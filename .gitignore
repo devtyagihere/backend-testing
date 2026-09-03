@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 vendor/
 __pycache__/
@@ -43,3 +43,9 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Large binary media files - serve from CDN not git
+*.mp4
+*.mov
+*.avi
+*.mkv
