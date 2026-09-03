@@ -24,6 +24,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.exception_handler(Exception)
+async def custom_global_exception_handler(request, exc):
+    import traceback
+    err_tb = traceback.format_exc()
+    return HTMLResponse(
+        content=f"""<!DOCTYPE html>
+<html><head><title>System Error</title><style>body{{background:#080808;color:#f87171;font-family:monospace;padding:32px;}}pre{{background:#121418;border:1px solid #334155;padding:16px;border-radius:8px;color:#cbd5e1;overflow:auto;}}</style></head>
+<body><h2>FreightWaves Server Exception</h2><pre>{err_tb}</pre></body></html>""",
+        status_code=500
+    )
+
 # Include API Routers
 app.include_router(api_router, prefix=settings.API_V1_STR)
 app.include_router(charter_router, prefix=settings.API_V1_STR)

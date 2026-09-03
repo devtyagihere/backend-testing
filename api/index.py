@@ -8,5 +8,11 @@ if root_dir not in sys.path:
 
 from app.main import app
 
-# Export both handler and app for Vercel serverless runtime
-handler = app
+# Standard Mangum adapter for Vercel/AWS Lambda Serverless ASGI handling
+try:
+    from mangum import Mangum
+    handler = Mangum(app, lifespan="off")
+except Exception:
+    handler = app
+
+app = app
