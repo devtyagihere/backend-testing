@@ -33,6 +33,9 @@ static_dir = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
+@app.get("/api/index.py", response_class=HTMLResponse, include_in_schema=False)
+@app.get("/api/index", response_class=HTMLResponse, include_in_schema=False)
+@app.get("/api", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/", response_class=HTMLResponse)
 def serve_home_ui():
     """Main Freight Maritime Landing Page"""
@@ -42,6 +45,7 @@ def serve_home_ui():
             return HTMLResponse(content=f.read())
     return HTMLResponse(content="<h1>Freight Maritime Home page not found.</h1>", status_code=404)
 
+@app.get("/api/sail-portal", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/sail-portal", response_class=HTMLResponse)
 def serve_sail_portal_ui():
     """SAIL & Ministry of Steel Intelligent Charter Decision Workspace"""
@@ -51,6 +55,7 @@ def serve_sail_portal_ui():
             return HTMLResponse(content=f.read())
     return HTMLResponse(content="<h1>SAIL Portal workspace page not found.</h1>", status_code=404)
 
+@app.get("/api/admin", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/admin", response_class=HTMLResponse)
 def serve_admin_ui():
     """FreightWaves Admin Dashboard — Charter Inquiry Management"""
