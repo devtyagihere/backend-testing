@@ -7,3 +7,6 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
 from app.main import app
+
+# Export both handler and app for Vercel serverless runtime
+handler = app

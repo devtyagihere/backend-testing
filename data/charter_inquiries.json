@@ -1,5 +1,32 @@
 [
   {
+    "inquiry_id": "FW-2026-304097",
+    "first_name": "Priya",
+    "last_name": "Verma",
+    "email": "priya.verma@shipping.com",
+    "commodity": "Liquid Chemicals (IMO II/III)",
+    "parcel_mt": 12000.0,
+    "load_port": "Rotterdam",
+    "discharge_port": "Piraeus",
+    "voyage_notes": "",
+    "status": "VESSEL MATCHING",
+    "created_at": "2026-09-03T15:13:50.449605+00:00",
+    "updated_at": "2026-09-03T15:13:54.191758+00:00"
+  },
+  {
+    "inquiry_id": "FW-2026-435558",
+    "first_name": "Arjun",
+    "last_name": "Sharma",
+    "email": "arjun.sharma@sailsteel.in",
+    "commodity": "Clean Petroleum Products (ULSD/Gasoline)",
+    "parcel_mt": 75000.0,
+    "load_port": "Augusta, IT",
+    "discharge_port": "Paradip, IN",
+    "voyage_notes": "Urgent delivery required within laycan window",
+    "status": "PENDING",
+    "created_at": "2026-09-03T15:13:47.191126+00:00"
+  },
+  {
     "inquiry_id": "FW-2026-733542",
     "first_name": "Priya",
     "last_name": "Verma",
