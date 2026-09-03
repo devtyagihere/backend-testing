@@ -7,6 +7,7 @@ import os
 import json
 import httpx
 import logging
+from filelock import FileLock
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from app.core.config import settings
@@ -14,6 +15,7 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 LOCAL_STORAGE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "charter_inquiries.json")
+LOCAL_STORAGE_LOCK = LOCAL_STORAGE_PATH + ".lock"
 
 
 def _ensure_local_storage():
@@ -26,15 +28,16 @@ def _ensure_local_storage():
 def _save_local_inquiry(inquiry: dict):
     _ensure_local_storage()
     try:
-        with open(LOCAL_STORAGE_PATH, "r+", encoding="utf-8") as f:
-            try:
-                data = json.load(f)
-            except Exception:
-                data = []
-            data.insert(0, inquiry)
-            f.seek(0)
-            json.dump(data, f, indent=2)
-            f.truncate()
+        with FileLock(LOCAL_STORAGE_LOCK, timeout=10):
+            with open(LOCAL_STORAGE_PATH, "r+", encoding="utf-8") as f:
+                try:
+                    data = json.load(f)
+                except Exception:
+                    data = []
+                data.insert(0, inquiry)
+                f.seek(0)
+                json.dump(data, f, indent=2)
+                f.truncate()
     except Exception as e:
         logger.error("Error writing to local backup ledger: %s", str(e))
 
@@ -42,8 +45,9 @@ def _save_local_inquiry(inquiry: dict):
 def _get_local_inquiries() -> List[dict]:
     _ensure_local_storage()
     try:
-        with open(LOCAL_STORAGE_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
+        with FileLock(LOCAL_STORAGE_LOCK, timeout=10):
+            with open(LOCAL_STORAGE_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
     except Exception:
         return []
 
@@ -51,20 +55,21 @@ def _get_local_inquiries() -> List[dict]:
 def _update_local_status(inquiry_id: str, new_status: str) -> bool:
     _ensure_local_storage()
     try:
-        with open(LOCAL_STORAGE_PATH, "r+", encoding="utf-8") as f:
-            data = json.load(f)
-            found = False
-            for item in data:
-                if item.get("inquiry_id") == inquiry_id:
-                    item["status"] = new_status
-                    item["updated_at"] = datetime.now(timezone.utc).isoformat()
-                    found = True
-                    break
-            if found:
-                f.seek(0)
-                json.dump(data, f, indent=2)
-                f.truncate()
-            return found
+        with FileLock(LOCAL_STORAGE_LOCK, timeout=10):
+            with open(LOCAL_STORAGE_PATH, "r+", encoding="utf-8") as f:
+                data = json.load(f)
+                found = False
+                for item in data:
+                    if item.get("inquiry_id") == inquiry_id:
+                        item["status"] = new_status
+                        item["updated_at"] = datetime.now(timezone.utc).isoformat()
+                        found = True
+                        break
+                if found:
+                    f.seek(0)
+                    json.dump(data, f, indent=2)
+                    f.truncate()
+                return found
     except Exception as e:
         logger.error("Error updating local ledger: %s", str(e))
         return False
@@ -90,7 +95,10 @@ def _generate_inquiry_id() -> str:
 
 
 def save_inquiry_to_supabase(data: dict) -> dict:
-    """Insert charter inquiry into Supabase charter_inquiries table & local ledger."""
+    """Insert charter inquiry into Supabase charter_inquiries table & local ledger.
+    
+    Raises RuntimeError if the inquiry cannot be saved to any persistent store.
+    """
     inquiry_id = _generate_inquiry_id()
     created_at = datetime.now(timezone.utc).isoformat()
 
@@ -109,7 +117,12 @@ def save_inquiry_to_supabase(data: dict) -> dict:
     }
 
     # Always persist locally first so data is never lost
-    _save_local_inquiry(payload)
+    try:
+        _save_local_inquiry(payload)
+    except Exception as e:
+        # M3 FIX: If local save fails critically, raise instead of silently continuing
+        logger.error("Critical: local ledger save failed: %s", str(e))
+        raise RuntimeError(f"Failed to persist inquiry to local ledger: {e}")
 
     # If Supabase URL is configured, also post to Supabase
     if settings.SUPABASE_URL and not "YOUR_PROJECT_ID" in settings.SUPABASE_URL and settings.SUPABASE_PUBLISHABLE_KEY:

@@ -8,13 +8,56 @@ from app.services.voyage_service import voyage_service
 from app.services.vessel_service import vessel_service
 
 class FreightForecastingEngine:
+    # Reference route used in the historical dataset
+    REFERENCE_ROUTE_KEY = "route_aus_paradip_panamax_usd_t"
+    REFERENCE_DISTANCE_NM = 4650  # Hay Point (AUHPT) -> Paradip (INPRT)
+
     def __init__(self):
         self._load_historical_data()
+        self._load_routes_data()
 
     def _load_historical_data(self):
         data_path = os.path.join(os.path.dirname(__file__), "..", "data", "historical_indices.json")
         with open(data_path, "r", encoding="utf-8-sig") as f:
             self.history = json.load(f)
+
+    def _load_routes_data(self):
+        """Load route distances for proportional rate derivation."""
+        routes_path = os.path.join(os.path.dirname(__file__), "..", "data", "routes_distances.json")
+        with open(routes_path, "r", encoding="utf-8-sig") as f:
+            routes_raw = json.load(f)["routes"]
+        self.route_distances = {}
+        for route in routes_raw:
+            origin_id = route["origin_id"]
+            for dest_id, dest_info in route["destinations"].items():
+                self.route_distances[(origin_id, dest_id)] = dest_info["distance_nm"]
+
+    def _get_distance_ratio(self, origin_id: str, dest_id: str) -> float:
+        """Get distance ratio relative to the reference route (AUHPT -> INPRT).
+        
+        This is used to proportionally scale freight rates for routes that
+        differ in distance from the reference historical data.
+        """
+        actual_distance = self.route_distances.get((origin_id, dest_id), self.REFERENCE_DISTANCE_NM)
+        return actual_distance / self.REFERENCE_DISTANCE_NM
+
+    def _get_vessel_tce_ratio(self, vessel_class: str) -> float:
+        """Get TCE scaling factor relative to the reference Panamax class.
+        
+        Different vessel classes have different baseline TCE rates, which
+        affect the per-MT freight rate proportionally.
+        """
+        vessel = vessel_service.get_vessel_by_class(vessel_class)
+        ref_vessel = vessel_service.get_vessel_by_class("Panamax")
+        return vessel.get("base_tce_rate_usd_day", 17500) / ref_vessel.get("base_tce_rate_usd_day", 17500)
+
+    def _derive_historical_rate(self, record: Dict[str, Any], distance_ratio: float, tce_ratio: float) -> float:
+        """Derive a route-specific historical rate from the reference Aus-Paradip data.
+        
+        Applies distance and TCE scaling to produce a proportional estimate.
+        """
+        reference_rate = record.get(self.REFERENCE_ROUTE_KEY, 14.0)
+        return reference_rate * distance_ratio * tce_ratio
 
     def get_latest_market_snapshot(self) -> Dict[str, Any]:
         return self.history[-1]
@@ -36,12 +79,19 @@ class FreightForecastingEngine:
         2. Baltic Sub-Index seasonal cycle (Monsoon / Chinese NY / Restocking)
         3. Bunker fuel price forward expectations
         4. Monte Carlo volatility cone for 80% and 95% confidence intervals
+        
+        C2 FIX: Rates are now dynamically derived from the reference Aus-Paradip
+        dataset using distance and TCE ratios for ALL origin/destination/vessel combos.
         """
         latest = self.history[-1]
         latest_date = datetime.strptime(latest["date"], "%Y-%m-%d")
 
         vessel = vessel_service.get_vessel_by_class(vessel_class)
         proxy_idx = vessel.get("baltic_index_proxy", "BPI")
+
+        # C2 FIX: Calculate scaling factors for this specific route + vessel combo
+        distance_ratio = self._get_distance_ratio(origin_id, dest_id)
+        tce_ratio = self._get_vessel_tce_ratio(vessel_class)
 
         # Current baseline parameters
         current_bpi = latest.get("bpi", 1680.0)
@@ -60,15 +110,23 @@ class FreightForecastingEngine:
         )
         spot_rate = current_voyage.freight_rate_per_mt_usd
 
-        # Calculate recent 30-day slope and historical volatility
-        recent_30 = [h["route_aus_paradip_panamax_usd_t"] for h in self.history[-30:]]
+        # C2 FIX: Derive route-specific historical rates for momentum calculation
+        recent_30 = [
+            self._derive_historical_rate(h, distance_ratio, tce_ratio)
+            for h in self.history[-30:]
+        ]
         mean_rate = sum(recent_30) / len(recent_30)
         variance = sum((x - mean_rate) ** 2 for x in recent_30) / len(recent_30)
         daily_volatility = math.sqrt(variance) / mean_rate # normalized daily volatility (~2.5%)
 
-        # Estimate short-term trend based on 14-day momentum
-        rate_14_days_ago = self.history[-14]["route_aus_paradip_panamax_usd_t"]
+        # C2 FIX: Derive route-specific rate for 14-day momentum calculation
+        rate_14_days_ago = self._derive_historical_rate(
+            self.history[-14], distance_ratio, tce_ratio
+        )
         recent_trend_slope = (spot_rate - rate_14_days_ago) / 14.0
+
+        # Derive route-specific long-term median for mean reversion
+        long_term_median = 13.80 * distance_ratio * tce_ratio
 
         forecast_points = []
         
@@ -87,8 +145,8 @@ class FreightForecastingEngine:
             decay = math.exp(-0.06 * step)
             projected_delta = (recent_trend_slope * step * decay) + (season_factor * spot_rate * (step / 30.0))
             
-            # Mean reversion towards long-term median ($13.80/MT)
-            mean_reversion_pull = 0.015 * (13.80 - spot_rate) * step
+            # Mean reversion towards route-specific long-term median
+            mean_reversion_pull = 0.015 * (long_term_median - spot_rate) * step
             
             predicted_rate = round(spot_rate + projected_delta + mean_reversion_pull, 2)
             predicted_rate = max(8.50, predicted_rate) # Floor physical rate

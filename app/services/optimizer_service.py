@@ -40,6 +40,14 @@ class CharterOptimizerService:
         # For each future day t, calculate: Net Cost = (Forecasted Freight Rate * Tonnage) + (Holding Cost * t)
         # Find day t* that minimizes Net Cost within the permissible booking window (up to laycan - transit_days - 3)
         steaming_days = current_voyage.steaming_days
+
+        # L2 FIX: Validate that the laycan window allows the vessel to physically arrive
+        if steaming_days >= req.laycan_days_ahead:
+            raise ValueError(
+                f"Infeasible laycan: Vessel requires {steaming_days:.1f} steaming days but laycan is only "
+                f"{req.laycan_days_ahead} days ahead. Increase laycan window or select a closer origin port."
+            )
+
         max_wait_days = max(1, int(req.laycan_days_ahead - steaming_days - 3))
         max_wait_days = min(max_wait_days, len(forecast_points))
 

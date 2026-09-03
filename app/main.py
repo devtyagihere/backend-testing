@@ -14,10 +14,12 @@ app = FastAPI(
 )
 
 # Enable CORS for all origins
+# NOTE: allow_credentials must be False when allow_origins=["*"]
+# Starlette raises AssertionError if both are True simultaneously.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

@@ -7,6 +7,7 @@ Charter Inquiry API Routes
 """
 import re
 import time
+import secrets
 import logging
 from fastapi import APIRouter, HTTPException, Header, Request
 from pydantic import BaseModel, field_validator
@@ -92,8 +93,8 @@ class StatusUpdateRequest(BaseModel):
 
 
 def _require_admin(x_admin_token: Optional[str]):
-    """Validate admin secret token from request header."""
-    if not x_admin_token or x_admin_token != settings.ADMIN_SECRET_TOKEN:
+    """Validate admin secret token from request header using constant-time comparison."""
+    if not x_admin_token or not secrets.compare_digest(x_admin_token, settings.ADMIN_SECRET_TOKEN):
         raise HTTPException(status_code=401, detail="Unauthorized. Invalid or missing admin token.")
 
 

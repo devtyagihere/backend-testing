@@ -27,14 +27,11 @@ class VoyageService:
                         "canal_transit": dest.get("canal_transit", "None"),
                         "canal_dues_usd": dest.get("canal_dues_usd", 0.0)
                     }
-        # Fallback default distance
-        return {
-            "origin_name": "Hay Point / Gladstone (Australia)",
-            "dest_name": "Paradip Port",
-            "distance_nm": 4650,
-            "canal_transit": "None",
-            "canal_dues_usd": 0.0
-        }
+        # No silent fallback — unknown routes must be explicitly flagged
+        raise ValueError(
+            f"Route not found: origin '{origin_id}' to destination '{dest_id}'. "
+            f"Please verify port IDs against the routes_distances database."
+        )
 
     def calculate_voyage_economics(
         self,

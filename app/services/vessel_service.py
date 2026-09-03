@@ -64,9 +64,9 @@ class VesselService:
             beam_clearance = round(dest_port["max_beam_m"] - vessel["max_beam_m"], 2)
 
             # 3. Port Physical Restrictions Check
-            if draft_clearance < 0.0: # Minimum 0.3m under-keel clearance (UKC)
+            if draft_clearance < 0.3: # Minimum 0.3m under-keel clearance (UKC) per IMO standards
                 is_suitable = False
-                reasons.append(f"Draft restriction at {dest_port['name']}: Arrival draft {estimated_draft}m exceeds max permissible {port_max_draft}m (UKC clearance: {draft_clearance}m).")
+                reasons.append(f"Draft restriction at {dest_port['name']}: Arrival draft {estimated_draft}m exceeds max permissible {port_max_draft}m (UKC clearance: {draft_clearance}m, minimum required: 0.3m).")
 
             if loa_clearance < 0:
                 is_suitable = False
