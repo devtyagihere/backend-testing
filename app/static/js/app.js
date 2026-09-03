@@ -16,9 +16,9 @@ let indianPortsData = [];
 // Route mapping definitions
 const ROUTE_CONFIG = {
   "HAYPOINT_PARADIP": { origin: "AUHPT", dest: "INPRT", distance_nm: 4650, origin_name: "Hay Point, Australia", dest_name: "Paradip, India" },
-  "GLADSTONE_VIZAG": { origin: "AUGLT", dest: "INVTZ", distance_nm: 4420, origin_name: "Gladstone, Australia", dest_name: "Visakhapatnam, India" },
-  "TABONEO_HALDIA": { origin: "IDTBN", dest: "INHLD", distance_nm: 2180, origin_name: "Taboneo, Indonesia", dest_name: "Haldia, India" },
-  "RICHARDSBAY_GANGAVARAM": { origin: "ZARCB", dest: "INGNR", distance_nm: 4950, origin_name: "Richards Bay, South Africa", dest_name: "Gangavaram, India" }
+  "GLADSTONE_VIZAG": { origin: "AUHPT", dest: "INVTZ", distance_nm: 4550, origin_name: "Gladstone, Australia", dest_name: "Visakhapatnam, India" },
+  "TABONEO_HALDIA": { origin: "IDTBO", dest: "INHLD", distance_nm: 2370, origin_name: "Taboneo, Indonesia", dest_name: "Haldia, India" },
+  "RICHARDSBAY_GANGAVARAM": { origin: "MZMPM", dest: "INGNR", distance_nm: 4270, origin_name: "Maputo / Matola, Mozambique", dest_name: "Gangavaram, India" }
 };
 
 // Preset SAIL Demo Scenarios
@@ -329,7 +329,12 @@ async function runOptimization(showToastNotification = false) {
 
 // ── Render Optimizer UI Elements ──────────────────────────────────────────
 function renderOptimizerResults(data, route) {
-  const isBookNow = data.recommendation === "BOOK_NOW" || data.optimal_charter_day === 0;
+  const optDay = data.optimal_booking_day_offset !== undefined ? data.optimal_booking_day_offset : (data.optimal_charter_day || 0);
+  const isBookNow = data.recommendation === "BOOK_NOW" || optDay === 0;
+  const optDateStr = data.optimal_booking_date || data.optimal_charter_date || (optDay === 0 ? "Day 0 (Spot)" : `Day ${optDay}`);
+  const targetRate = data.target_booking_rate_usd_t !== undefined ? data.target_booking_rate_usd_t : (data.target_rate_usd_per_mt || 14.0);
+  const netSavingsVal = data.expected_savings_usd !== undefined ? data.expected_savings_usd : (data.projected_net_savings_usd || 0);
+  const confidenceVal = data.confidence_pct !== undefined ? data.confidence_pct : (data.confidence_score ? data.confidence_score * 100 : 88);
   
   // 1. Recommendation Banner
   const banner = document.getElementById("decision-recommendation-banner");
@@ -344,22 +349,22 @@ function renderOptimizerResults(data, route) {
     banner.className = `fw-card p-5 ${isBookNow ? 'decision-banner-book' : 'decision-banner-wait'}`;
   }
   if (title) {
-    title.textContent = isBookNow ? "BOOK CHARTER NOW" : `WAIT & LOCK IN ON DAY ${data.optimal_charter_day}`;
+    title.textContent = isBookNow ? "BOOK CHARTER NOW" : `WAIT & LOCK IN ON DAY ${optDay}`;
   }
   if (subtext) {
     subtext.textContent = isBookNow 
-      ? `Spot rate ($${data.target_rate_usd_per_mt?.toFixed(2)}/MT) is optimal. Neutralizes inventory holding cost.`
-      : `Projected softening in freight rates delivers $${data.projected_net_savings_usd?.toLocaleString()} in net procurement savings.`;
+      ? `Spot rate ($${targetRate.toFixed(2)}/MT) is optimal. Neutralizes inventory holding cost.`
+      : `Projected softening in freight rates delivers $${netSavings.toLocaleString()} in net procurement savings.`;
   }
   if (confBadge) {
     confBadge.className = `fw-badge ${isBookNow ? 'fw-badge-emerald' : 'fw-badge-cyan'}`;
-    confBadge.textContent = `CONFIDENCE ${(data.confidence_score * 100).toFixed(0)}%`;
+    confBadge.textContent = `CONFIDENCE ${confidenceVal.toFixed(0)}%`;
   }
   if (optDate) {
-    optDate.textContent = isBookNow ? "Day 0 (Spot)" : `Day ${data.optimal_charter_day} (${data.optimal_charter_date})`;
+    optDate.textContent = isBookNow ? "Day 0 (Spot)" : `Day ${optDay} (${optDateStr})`;
   }
   if (netSavings) {
-    netSavings.textContent = `$${data.projected_net_savings_usd?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    netSavings.textContent = `$${netSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
   if (iconBadge) {
     iconBadge.className = `w-12 h-12 rounded-xl flex items-center justify-center ${isBookNow ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-400' : 'bg-[#0278ff]/20 border border-[#0278ff]/40 text-[#0278ff]'}`;
@@ -367,7 +372,8 @@ function renderOptimizerResults(data, route) {
   }
 
   // 2. Vessel Matching Specs
-  const vessel = data.vessel_matching || {};
+  const recommendedClass = data.recommended_vessel_class || (data.vessel_matching?.recommended_vessel_class) || "Panamax";
+  const matchedVessel = (data.all_vessel_matches || []).find(v => v.vessel_class === recommendedClass) || (data.all_vessel_matches?.[0]) || {};
   const vBadge = document.getElementById("vessel-class-badge");
   const vDwt = document.getElementById("vessel-dwt-val");
   const vDraft = document.getElementById("vessel-draft-val");
@@ -375,27 +381,30 @@ function renderOptimizerResults(data, route) {
   const vUkc = document.getElementById("vessel-ukc-val");
   const lighterageBox = document.getElementById("lighterage-status-box");
 
-  if (vBadge) vBadge.textContent = vessel.recommended_vessel_class || "KAMSARMAX";
-  if (vDwt) vDwt.textContent = `${(vessel.vessel_dwt_capacity || 82000).toLocaleString()} MT`;
-  if (vDraft) vDraft.textContent = `${(vessel.estimated_arrival_draft_m || 13.95).toFixed(2)} m`;
-  if (pDraft) pDraft.textContent = `${(vessel.port_max_draft_limit_m || 14.50).toFixed(2)} m`;
+  const arrivalDraft = matchedVessel.estimated_arrival_draft_m || 13.95;
+  const portMaxDraft = matchedVessel.port_max_draft_m || 14.50;
+  const ukc = matchedVessel.draft_clearance_m !== undefined ? matchedVessel.draft_clearance_m : (portMaxDraft - arrivalDraft);
+
+  if (vBadge) vBadge.textContent = recommendedClass.toUpperCase();
+  if (vDwt) vDwt.textContent = `${(data.parcel_tonnage_mt || 75000).toLocaleString()} MT`;
+  if (vDraft) vDraft.textContent = `${arrivalDraft.toFixed(2)} m`;
+  if (pDraft) pDraft.textContent = `${portMaxDraft.toFixed(2)} m`;
   if (vUkc) {
-    const ukc = (vessel.port_max_draft_limit_m || 14.50) - (vessel.estimated_arrival_draft_m || 13.95);
-    vUkc.textContent = `+${ukc.toFixed(2)} m`;
-    vUkc.className = `font-bold font-mono ${ukc >= 0.5 ? 'text-emerald-400' : 'text-amber-400'}`;
+    vUkc.textContent = `${ukc >= 0 ? '+' : ''}${ukc.toFixed(2)} m`;
+    vUkc.className = `font-bold font-mono ${ukc >= 0.3 ? 'text-emerald-400' : 'text-amber-400'}`;
   }
   if (lighterageBox) {
-    if (vessel.lighterage_required) {
+    if (matchedVessel.lighterage_required) {
       lighterageBox.className = "p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs flex items-center space-x-2";
-      lighterageBox.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4 shrink-0"></i><span>Draft exceeds limit. Offshore lighterage required.</span>`;
+      lighterageBox.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4 shrink-0"></i><span>${matchedVessel.transshipment_recommendation || 'Draft exceeds limit. Offshore lighterage required.'}</span>`;
     } else {
       lighterageBox.className = "p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center space-x-2";
-      lighterageBox.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 shrink-0"></i><span>Direct berthing approved. Under-keel clearance compliant.</span>`;
+      lighterageBox.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 shrink-0"></i><span>Direct berthing approved. Under-keel clearance (${ukc.toFixed(2)}m) compliant.</span>`;
     }
   }
 
   // 3. Groq AI Decision Memo
-  const memoText = data.decision_summary || "Immediate booking of Kamsarmax capacity is recommended.";
+  const memoText = data.decision_summary || "Immediate booking of vessel capacity is recommended.";
   const memoBody = document.getElementById("groq-ai-memo-text");
   const landingAi = document.getElementById("landing-ai-text");
   if (memoBody) memoBody.textContent = memoText;
@@ -415,16 +424,15 @@ function renderForecastChart(canvasId, data) {
 
   const ctx = canvas.getContext("2d");
   
-  // Extract or generate forecast curve data points
-  const days = 30;
   const labels = [];
   const p50Data = [];
   const p10Data = [];
   const p90Data = [];
   const histData = [];
 
-  const baseRate = data.current_spot_rate_usd_per_mt || 10.70;
-  const optDay = data.optimal_charter_day || 0;
+  const baseRate = data.current_spot_rate_usd_t !== undefined ? data.current_spot_rate_usd_t : (data.current_spot_rate_usd_per_mt || 14.0);
+  const optDay = data.optimal_booking_day_offset !== undefined ? data.optimal_booking_day_offset : (data.optimal_charter_day || 0);
+  const forecastPoints = data.forecast_curve || [];
 
   // 10 historical days
   for (let i = -10; i < 0; i++) {
@@ -442,20 +450,25 @@ function renderForecastChart(canvasId, data) {
   p10Data.push(baseRate);
   p90Data.push(baseRate);
 
-  // 30 Forecast Days
-  for (let i = 1; i <= days; i++) {
-    labels.push(`Day ${i}`);
-    histData.push(null);
-    
-    // Slight softening or seasonal curve
-    let trend = Math.sin((i - optDay) * 0.15) * 0.45 - (i * 0.015);
-    let p50 = baseRate + trend;
-    let p10 = p50 - 0.30 - (i * 0.012);
-    let p90 = p50 + 0.35 + (i * 0.015);
-
-    p50Data.push(p50);
-    p10Data.push(p10);
-    p90Data.push(p90);
+  // Forecast points from API
+  if (forecastPoints && forecastPoints.length > 0) {
+    forecastPoints.forEach(fp => {
+      labels.push(`Day ${fp.day_offset}`);
+      histData.push(null);
+      p50Data.push(fp.predicted_rate_usd_t);
+      p10Data.push(fp.lower_95_pct || fp.lower_80_pct);
+      p90Data.push(fp.upper_95_pct || fp.upper_80_pct);
+    });
+  } else {
+    for (let i = 1; i <= 30; i++) {
+      labels.push(`Day ${i}`);
+      histData.push(null);
+      let trend = Math.sin((i - optDay) * 0.15) * 0.45 - (i * 0.015);
+      let p50 = baseRate + trend;
+      p50Data.push(p50);
+      p10Data.push(p50 - 0.30 - (i * 0.012));
+      p90Data.push(p50 + 0.35 + (i * 0.015));
+    }
   }
 
   // Destroy previous instance
@@ -672,7 +685,7 @@ function renderPortsCards() {
       <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
         <div>
           <span class="font-extrabold text-sm text-white block">${p.name}</span>
-          <span class="text-[10px] text-slate-400 font-mono">${p.id} · ${p.state}</span>
+          <span class="text-[10px] text-slate-400 font-mono">${p.id} · ${p.state_or_country || p.state}</span>
         </div>
         <span class="fw-badge fw-badge-emerald">OPERATIONAL</span>
       </div>
@@ -683,20 +696,20 @@ function renderPortsCards() {
         </div>
         <div class="flex items-center justify-between">
           <span class="text-slate-400">Max DWT Allowed:</span>
-          <span class="font-bold text-white font-mono">${p.max_dwt_t?.toLocaleString()} MT</span>
+          <span class="font-bold text-white font-mono">${p.max_dwt ? p.max_dwt.toLocaleString() + ' MT' : '85,000+ MT'}</span>
         </div>
         <div class="flex items-center justify-between">
           <span class="text-slate-400">Average Berth Queue:</span>
-          <span class="font-bold text-cyan-400 font-mono">2.4 Days</span>
+          <span class="font-bold text-cyan-400 font-mono">${p.avg_waiting_days || 1.8} Days</span>
         </div>
         <div class="flex items-center justify-between">
           <span class="text-slate-400">Mechanized Discharge:</span>
-          <span class="font-bold text-emerald-400">${p.mechanized_discharge_rate_tpd?.toLocaleString()} TPD</span>
+          <span class="font-bold text-emerald-400">${(p.handling_rate_tpd || 30000).toLocaleString()} TPD</span>
         </div>
       </div>
       <div class="pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
-        <span>SAIL Plant Link:</span>
-        <span class="font-semibold text-white">${p.sail_plant_linked || 'RSP / BSL'}</span>
+        <span>Allowed Vessels:</span>
+        <span class="font-semibold text-white truncate max-w-[180px]">${(p.allowed_vessel_classes || []).join(', ') || 'Panamax, Cape'}</span>
       </div>
     `;
     container.appendChild(card);
