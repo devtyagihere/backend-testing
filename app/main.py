@@ -28,6 +28,15 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 app.include_router(charter_router, prefix=settings.API_V1_STR)
 
+# Video CDN Redirect (prevents 4.5MB Serverless response limit crash on Vercel)
+@app.get("/static/videos/ship.mp4", include_in_schema=False)
+@app.get("/static/videos/hero-bg.mp4", include_in_schema=False)
+def redirect_heavy_video():
+    return RedirectResponse(
+        url="https://videos.pexels.com/video-files/6985931/6985931-uhd_3840_2160_25fps.mp4",
+        status_code=307
+    )
+
 # Serve Frontend static directory
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(static_dir):
