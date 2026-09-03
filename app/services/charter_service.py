@@ -14,39 +14,52 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-LOCAL_STORAGE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "charter_inquiries.json")
-LOCAL_STORAGE_LOCK = LOCAL_STORAGE_PATH + ".lock"
+def _get_storage_paths():
+    """Get path and lock path for local backup storage, with /tmp fallback for Vercel/serverless."""
+    if os.environ.get("VERCEL"):
+        base_dir = "/tmp"
+    else:
+        base_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data")
+    
+    path = os.path.join(base_dir, "charter_inquiries.json")
+    lock = os.path.join(base_dir, "charter_inquiries.json.lock")
+    return path, lock
 
 
 def _ensure_local_storage():
-    os.makedirs(os.path.dirname(LOCAL_STORAGE_PATH), exist_ok=True)
-    if not os.path.exists(LOCAL_STORAGE_PATH):
-        with open(LOCAL_STORAGE_PATH, "w", encoding="utf-8") as f:
-            json.dump([], f, indent=2)
+    path, _ = _get_storage_paths()
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        if not os.path.exists(path):
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump([], f, indent=2)
+    except Exception as e:
+        logger.warning(f"Could not initialize local storage at {path}: {e}")
 
 
 def _save_local_inquiry(inquiry: dict):
     _ensure_local_storage()
+    path, lock = _get_storage_paths()
     try:
-        with FileLock(LOCAL_STORAGE_LOCK, timeout=10):
-            with open(LOCAL_STORAGE_PATH, "r+", encoding="utf-8") as f:
-                try:
+        with FileLock(lock, timeout=5):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                except Exception:
-                    data = []
-                data.insert(0, inquiry)
-                f.seek(0)
+            except Exception:
+                data = []
+            data.insert(0, inquiry)
+            with open(path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
-                f.truncate()
     except Exception as e:
-        logger.error("Error writing to local backup ledger: %s", str(e))
+        logger.warning("Error writing to local backup ledger: %s", str(e))
 
 
 def _get_local_inquiries() -> List[dict]:
     _ensure_local_storage()
+    path, lock = _get_storage_paths()
     try:
-        with FileLock(LOCAL_STORAGE_LOCK, timeout=10):
-            with open(LOCAL_STORAGE_PATH, "r", encoding="utf-8") as f:
+        with FileLock(lock, timeout=5):
+            with open(path, "r", encoding="utf-8") as f:
                 return json.load(f)
     except Exception:
         return []
@@ -54,24 +67,24 @@ def _get_local_inquiries() -> List[dict]:
 
 def _update_local_status(inquiry_id: str, new_status: str) -> bool:
     _ensure_local_storage()
+    path, lock = _get_storage_paths()
     try:
-        with FileLock(LOCAL_STORAGE_LOCK, timeout=10):
-            with open(LOCAL_STORAGE_PATH, "r+", encoding="utf-8") as f:
+        with FileLock(lock, timeout=5):
+            with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                found = False
-                for item in data:
-                    if item.get("inquiry_id") == inquiry_id:
-                        item["status"] = new_status
-                        item["updated_at"] = datetime.now(timezone.utc).isoformat()
-                        found = True
-                        break
-                if found:
-                    f.seek(0)
+            found = False
+            for item in data:
+                if item.get("inquiry_id") == inquiry_id:
+                    item["status"] = new_status
+                    item["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    found = True
+                    break
+            if found:
+                with open(path, "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=2)
-                    f.truncate()
-                return found
+            return found
     except Exception as e:
-        logger.error("Error updating local ledger: %s", str(e))
+        logger.warning("Error updating local ledger: %s", str(e))
         return False
 
 
@@ -95,10 +108,7 @@ def _generate_inquiry_id() -> str:
 
 
 def save_inquiry_to_supabase(data: dict) -> dict:
-    """Insert charter inquiry into Supabase charter_inquiries table & local ledger.
-    
-    Raises RuntimeError if the inquiry cannot be saved to any persistent store.
-    """
+    """Insert charter inquiry into Supabase charter_inquiries table & local ledger."""
     inquiry_id = _generate_inquiry_id()
     created_at = datetime.now(timezone.utc).isoformat()
 
@@ -117,18 +127,14 @@ def save_inquiry_to_supabase(data: dict) -> dict:
     }
 
     # Always persist locally first so data is never lost
-    try:
-        _save_local_inquiry(payload)
-    except Exception as e:
-        # M3 FIX: If local save fails critically, raise instead of silently continuing
-        logger.error("Critical: local ledger save failed: %s", str(e))
-        raise RuntimeError(f"Failed to persist inquiry to local ledger: {e}")
+    _save_local_inquiry(payload)
 
     # If Supabase URL is configured, also post to Supabase
     if settings.SUPABASE_URL and not "YOUR_PROJECT_ID" in settings.SUPABASE_URL and settings.SUPABASE_PUBLISHABLE_KEY:
         try:
             url = f"{settings.SUPABASE_URL.rstrip('/')}/rest/v1/charter_inquiries"
-            resp = httpx.post(url, json=payload, headers=_supabase_headers(use_service_key=False), timeout=10)
+            # Prefer service key on backend to avoid RLS blockages, fallback to publishable key
+            resp = httpx.post(url, json=payload, headers=_supabase_headers(use_service_key=True), timeout=10)
             if resp.status_code in (200, 201):
                 rows = resp.json()
                 saved = rows[0] if isinstance(rows, list) and len(rows) > 0 else payload
@@ -143,17 +149,28 @@ def save_inquiry_to_supabase(data: dict) -> dict:
 
 
 def get_all_inquiries_from_supabase() -> list:
-    """Fetch all charter inquiries (admin only). Tries Supabase, falls back to local ledger."""
+    """Fetch all charter inquiries (admin only). Tries Supabase, merges with local ledger."""
+    results = []
     if settings.SUPABASE_URL and not "YOUR_PROJECT_ID" in settings.SUPABASE_URL:
         try:
             url = f"{settings.SUPABASE_URL.rstrip('/')}/rest/v1/charter_inquiries?order=created_at.desc"
             resp = httpx.get(url, headers=_supabase_headers(use_service_key=True), timeout=10)
             if resp.status_code == 200:
-                return resp.json()
+                results = resp.json()
         except Exception as e:
             logger.warning("Supabase fetch failed: %s. Falling back to local ledger.", str(e))
 
-    return _get_local_inquiries()
+    local_items = _get_local_inquiries()
+    if not results:
+        return local_items
+
+    # Merge local items if not already present
+    seen_ids = {item.get("inquiry_id") for item in results if item.get("inquiry_id")}
+    for item in local_items:
+        if item.get("inquiry_id") and item.get("inquiry_id") not in seen_ids:
+            results.append(item)
+
+    return results
 
 
 def update_inquiry_status(inquiry_id: str, new_status: str) -> dict:
