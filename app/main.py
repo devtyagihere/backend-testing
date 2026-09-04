@@ -42,6 +42,16 @@ async def custom_global_exception_handler(request, exc):
         status_code=500
     )
 
+@app.middleware("http")
+async def vercel_path_rewrite_middleware(request, call_next):
+    # When deployed on Vercel, x-matched-path contains the original requested URL (e.g. /sail-portal, /api/v1/optimize)
+    matched_path = request.headers.get("x-matched-path") or request.headers.get("x-invoke-path") or request.headers.get("x-forwarded-uri")
+    if matched_path:
+        clean_path = matched_path.split("?")[0]
+        if clean_path and not clean_path.startswith("/api/index"):
+            request.scope["path"] = clean_path
+    return await call_next(request)
+
 # Include API Routers
 app.include_router(api_router, prefix=settings.API_V1_STR)
 app.include_router(charter_router, prefix=settings.API_V1_STR)
@@ -51,9 +61,6 @@ static_dir = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-@app.get("/api/index.py", response_class=HTMLResponse, include_in_schema=False)
-@app.get("/api/index", response_class=HTMLResponse, include_in_schema=False)
-@app.get("/api", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/", response_class=HTMLResponse)
 def serve_home_ui():
     """Main Freight Maritime Landing Page"""
@@ -63,7 +70,6 @@ def serve_home_ui():
             return HTMLResponse(content=f.read())
     return HTMLResponse(content="<h1>Freight Maritime Home page not found.</h1>", status_code=404)
 
-@app.get("/api/sail-portal", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/sail-portal", response_class=HTMLResponse)
 def serve_sail_portal_ui():
     """SAIL & Ministry of Steel Intelligent Charter Decision Workspace"""
@@ -73,7 +79,6 @@ def serve_sail_portal_ui():
             return HTMLResponse(content=f.read())
     return HTMLResponse(content="<h1>SAIL Portal workspace page not found.</h1>", status_code=404)
 
-@app.get("/api/admin", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/admin", response_class=HTMLResponse)
 def serve_admin_ui():
     """FreightWaves Admin Dashboard — Charter Inquiry Management"""

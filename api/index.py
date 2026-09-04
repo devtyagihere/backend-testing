@@ -8,5 +8,10 @@ if root_dir not in sys.path:
 
 from app.main import app
 
-# Vercel's Python runtime natively detects and executes the ASGI FastAPI `app` instance
+try:
+    from mangum import Mangum
+    handler = Mangum(app, lifespan="off")
+except Exception:
+    handler = app
 
+app = app
