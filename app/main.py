@@ -1,4 +1,11 @@
+import sys
 import os
+
+# Ensure project root is in sys.path so 'from app...' works when Vercel imports app/main.py directly
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
