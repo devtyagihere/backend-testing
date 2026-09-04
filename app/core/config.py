@@ -36,4 +36,7 @@ class Settings(BaseModel):
     # Admin Dashboard
     ADMIN_SECRET_TOKEN: str = os.getenv("ADMIN_SECRET_TOKEN", "fw-admin-2026-secure-token")
 
+    # Deployment base URL (used in email links — set this in Vercel env vars)
+    APP_BASE_URL: str = os.getenv("APP_BASE_URL", "http://localhost:8000")
+
 settings = Settings()

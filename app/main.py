@@ -44,12 +44,31 @@ async def custom_global_exception_handler(request, exc):
 
 @app.middleware("http")
 async def vercel_path_rewrite_middleware(request, call_next):
-    # When deployed on Vercel, x-matched-path contains the original requested URL (e.g. /sail-portal, /api/v1/optimize)
-    matched_path = request.headers.get("x-matched-path") or request.headers.get("x-invoke-path") or request.headers.get("x-forwarded-uri")
-    if matched_path:
-        clean_path = matched_path.split("?")[0]
-        if clean_path and not clean_path.startswith("/api/index"):
-            request.scope["path"] = clean_path
+    """
+    On Vercel, every request hits /api/index.py regardless of the original URL.
+    We must restore the original path from Vercel's forwarded headers so FastAPI
+    can route the request correctly.
+
+    Header priority (Vercel sets these):
+      1. x-matched-path  — the route pattern that matched (most reliable)
+      2. x-invoke-path   — set by older Vercel runtimes
+      3. x-forwarded-uri — set when behind a Vercel proxy rewrite
+
+    If none of these headers are present (e.g. local dev or non-Vercel host),
+    the scope path is left untouched — FastAPI uses the real request path as-is.
+    """
+    original_path: str | None = None
+    for header_name in ("x-matched-path", "x-invoke-path", "x-forwarded-uri"):
+        val = request.headers.get(header_name)
+        if val:
+            original_path = val.split("?")[0].strip()
+            break
+
+    if original_path:
+        # Ignore Vercel's internal routing path — it's not a real app route
+        if not original_path.startswith("/api/index"):
+            request.scope["path"] = original_path
+
     return await call_next(request)
 
 # Include API Routers

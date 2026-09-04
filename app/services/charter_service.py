@@ -254,7 +254,7 @@ def send_owner_notification(inquiry: dict) -> bool:
         </table>
 
         <div style="margin-top: 24px; padding: 16px; background: rgba(0,168,255,0.05); border: 1px solid rgba(0,168,255,0.2); border-radius: 8px;">
-          <p style="margin: 0; font-size: 12px; color: #94a3b8;">Manage this inquiry in the Admin Cockpit at <strong style="color: #00a8ff;">http://localhost:8000/admin</strong></p>
+          <p style="margin: 0; font-size: 12px; color: #94a3b8;">Manage this inquiry in the Admin Cockpit at <strong style="color: #00a8ff;">{settings.APP_BASE_URL}/admin</strong></p>
         </div>
       </div>
     </div>
