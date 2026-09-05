@@ -7,7 +7,7 @@ from pydantic import BaseModel
 load_dotenv()
 
 class Settings(BaseModel):
-    PROJECT_NAME: str = "SAIL Intelligent Freight Forecasting & Chartering System"
+    PROJECT_NAME: str = "SagarAi — Intelligent Maritime Freight Forecasting & Chartering System"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
     PORT: int = int(os.getenv("PORT", 8000))

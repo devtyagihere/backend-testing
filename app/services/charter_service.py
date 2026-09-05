@@ -227,7 +227,7 @@ def send_owner_notification(inquiry: dict) -> bool:
     html_body = f"""
     <div style="font-family: 'Inter', Arial, sans-serif; background: #080808; color: #ffffff; padding: 32px; border-radius: 12px;">
       <div style="max-width: 600px; margin: 0 auto; background: #121418; border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid #00a8ff; border-radius: 12px; padding: 32px;">
-        <h2 style="color: #00a8ff; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 4px;">FREIGHTWAVES</h2>
+        <h2 style="color: #00a8ff; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 4px;">SAGARAI</h2>
         <h1 style="color: #ffffff; font-size: 22px; margin: 0 0 24px;">New Charter Inquiry Received</h1>
 
         <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
@@ -261,9 +261,9 @@ def send_owner_notification(inquiry: dict) -> bool:
     """
 
     payload = {
-        "from": "FreightWaves <onboarding@resend.dev>",
+        "from": "SagarAi <onboarding@resend.dev>",
         "to": [settings.OWNER_EMAIL],
-        "subject": f"New Charter Inquiry - {inquiry.get('inquiry_id')}",
+        "subject": f"New Charter Inquiry - {inquiry.get('inquiry_id')} | SagarAi",
         "html": html_body,
     }
 
@@ -299,13 +299,13 @@ def send_customer_confirmation(inquiry: dict) -> bool:
       <div style="max-width: 600px; margin: 0 auto; background: #121418; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 32px;">
 
         <div style="margin-bottom: 24px;">
-          <h2 style="color: #00a8ff; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; margin: 0 0 4px;">FREIGHTWAVES</h2>
-          <p style="color: #64748b; font-size: 11px; margin: 0; font-family: monospace;">Chartering & Bulk Vessel Operations</p>
+          <h2 style="color: #00a8ff; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; margin: 0 0 4px;">SAGARAI</h2>
+          <p style="color: #64748b; font-size: 11px; margin: 0; font-family: monospace;">Intelligent Freight & Vessel Chartering Operations</p>
         </div>
 
         <h1 style="color: #ffffff; font-size: 20px; margin: 0 0 8px;">Hello {first_name},</h1>
         <p style="color: #94a3b8; font-size: 14px; line-height: 1.7; margin: 0 0 24px;">
-          Your charter inquiry has been successfully received by the FreightWaves Chartering Team.
+          Your charter inquiry has been successfully received by the SagarAi Chartering Team.
         </p>
 
         <div style="background: rgba(0,168,255,0.08); border: 1px solid rgba(0,168,255,0.3); border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 24px;">
@@ -317,22 +317,22 @@ def send_customer_confirmation(inquiry: dict) -> bool:
           Our team will review your cargo and voyage requirements. We aim to respond within <strong style="color: #ffffff;">2 hours</strong>.
         </p>
         <p style="color: #94a3b8; font-size: 13px; margin: 0 0 24px;">
-          Thank you for using FreightWaves.
+          Thank you for using SagarAi.
         </p>
 
         <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px;">
           <p style="color: #64748b; font-size: 12px; margin: 0;">Regards,</p>
-          <p style="color: #ffffff; font-size: 13px; font-weight: 700; margin: 4px 0 0;">FreightWaves</p>
-          <p style="color: #64748b; font-size: 11px; margin: 2px 0 0; font-family: monospace;">Chartering Team</p>
+          <p style="color: #ffffff; font-size: 13px; font-weight: 700; margin: 4px 0 0;">SagarAi</p>
+          <p style="color: #64748b; font-size: 11px; margin: 2px 0 0; font-family: monospace;">Chartering Intelligence Desk</p>
         </div>
       </div>
     </div>
     """
 
     payload = {
-        "from": "FreightWaves <onboarding@resend.dev>",
+        "from": "SagarAi <onboarding@resend.dev>",
         "to": [inquiry.get("email")],
-        "subject": "We Received Your Charter Inquiry | FreightWaves",
+        "subject": f"We Received Your Charter Inquiry | {inquiry_id} | SagarAi",
         "html": html_body,
     }
 
@@ -350,9 +350,9 @@ def send_customer_confirmation(inquiry: dict) -> bool:
             # Resend Sandbox mode: fallback send customer confirmation copy to owner
             logger.warning("Resend in Sandbox mode. Forwarding customer confirmation copy to owner (%s).", settings.OWNER_EMAIL)
             sandbox_payload = {
-                "from": "FreightWaves <onboarding@resend.dev>",
+                "from": "SagarAi <onboarding@resend.dev>",
                 "to": [settings.OWNER_EMAIL],
-                "subject": f"[Customer Copy] We Received Your Charter Inquiry | {inquiry_id} (For: {inquiry.get('email')})",
+                "subject": f"[Customer Copy] We Received Your Charter Inquiry | {inquiry_id} | SagarAi (For: {inquiry.get('email')})",
                 "html": f"<p style='color:#f59e0b; font-family:sans-serif;'><strong>[SANDBOX NOTICE]</strong> This confirmation was addressed to <strong>{inquiry.get('email')}</strong>, forwarded to you because your Resend account is in test mode (verify domain at resend.com to deliver directly to customers).</p>" + html_body
             }
             fb_resp = httpx.post(

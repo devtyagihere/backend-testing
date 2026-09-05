@@ -26,7 +26,7 @@ if __name__ == "__main__":
     
     display_host = "localhost" if host == "0.0.0.0" else host
     print("=" * 70)
-    print("[SAIL] INTELLIGENT FREIGHT FORECASTING & CHARTERING ENGINE")
+    print("[SagarAi] INTELLIGENT FREIGHT FORECASTING & CHARTERING ENGINE")
     print(f"[*] Interactive UI:      http://{display_host}:{port}/")
     print(f"[*] SAIL Portal:         http://{display_host}:{port}/sail-portal")
     print(f"[*] Admin Cockpit:       http://{display_host}:{port}/admin")
